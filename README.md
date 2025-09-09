@@ -61,7 +61,7 @@ This project creates a **smart AI coordinator** that efficiently handles:
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
+git clone <https://github.com/samueldervishi1/mcp>
 cd mcp
 ```
 
