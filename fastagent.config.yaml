@@ -1,0 +1,51 @@
+# FastAgent Configuration File
+
+# Default Model Configuration:
+#
+# Takes format:
+#   <provider>.<model_string>.<reasoning_effort?> (e.g. anthropic.claude-3-5-sonnet-20241022 or openai.o3-mini.low)
+# Accepts aliases for Anthropic Models: haiku, haiku3, sonnet, sonnet35, opus, opus3
+# and OpenAI Models: gpt-4.1, gpt-4.1-mini, o1, o1-mini, o3-mini
+# For Google Gemini: google.gemini-1.5-pro, google.gemini-1.5-flash, google.gemini-2.0-flash-exp
+#
+# If not specified, defaults to "haiku".
+# Can be overriden with a command line switch --model=<model>, or within the Agent constructor.
+
+#default_model: google.gemini-2.5-pro
+default_model: google.gemini-2.0-flash-exp
+
+# Configuration for Model Context Protocol (MCP) Servers:
+mcp:
+  servers:
+    # Filesystem server provides file operations with configurable access controls
+    filesystem:
+      command: npx
+      args:
+        [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          ".",
+          "/home/samuel/Downloads",
+        ]
+      env:
+        ALLOW_PATHS: "/home/samuel/Downloads"
+        ALLOW_OPERATIONS: "read,write,delete,move,copy,list"
+
+    # Tavily AI search server (working package)
+    tavily:
+      command: npx
+      args: ["-y", "@mcptools/mcp-tavily"]
+      env:
+        TAVILY_API_KEY: "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"
+
+    # Terminal controller for secure command execution
+    terminal:
+      command: uvx
+      args: ["terminal_controller"]
+      env: {}
+    
+    # Memory server for persistent knowledge across sessions
+    memory:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-memory"]
+      env: {}
