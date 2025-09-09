@@ -2,11 +2,11 @@
 
 import asyncio
 import logging
-import os
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
 import yaml
 
 PROJECT_ROOT = Path(__file__).parent.resolve()

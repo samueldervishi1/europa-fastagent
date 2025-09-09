@@ -4,8 +4,10 @@ Version information for FastAgent Ultimate MCP Coordinator
 This file dynamically reads version from pyproject.toml to avoid duplication.
 """
 
-import tomllib
 from pathlib import Path
+
+import tomllib
+
 
 def _get_version_from_pyproject():
     """Read version from pyproject.toml"""
