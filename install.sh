@@ -9,9 +9,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-REPO="samueldervishi1/mcp"
+REPO="samueldervishi1/tauricus-fastagent"
 BINARY_NAME="tauricus"
-PROJECT_NAME="tauricus"
+PROJECT_NAME="tauricus-cli"
 
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -115,8 +115,8 @@ install_from_github() {
         exit 1
     fi
     
-    # Find the extracted directory (it might not be exactly "mcp-main")
-    extracted_dir=$(find "$temp_dir" -maxdepth 1 -type d -name "mcp-*" | head -n 1)
+    # Find the extracted directory (it might not be exactly "tauricus-fastagent-main")
+    extracted_dir=$(find "$temp_dir" -maxdepth 1 -type d -name "tauricus-fastagent-*" | head -n 1)
     if [ -z "$extracted_dir" ]; then
         print_error "Failed to find extracted directory in $temp_dir"
         exit 1
