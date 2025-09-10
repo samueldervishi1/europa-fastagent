@@ -4,6 +4,8 @@ import typer
 from rich.console import Console
 from rich.prompt import Confirm
 
+from ..setup_wizard import run_setup_wizard
+
 app = typer.Typer()
 console = Console()
 
@@ -233,3 +235,9 @@ def init(
         console.print("  uv run agent.py")
     else:
         console.print("\n[yellow]No files were created or modified.[/yellow]")
+
+
+@app.command("keys")
+def keys():
+    """Interactive setup wizard for API keys (Gemini, Tavily)."""
+    run_setup_wizard()

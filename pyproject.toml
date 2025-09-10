@@ -1,7 +1,7 @@
 [project]
-name = "fast-agent-mcp"
-version = "0.0.2"
-description = "Define, Prompt and Test MCP enabled Agents and Workflows"
+name = "genesys"
+version = "0.0.10"
+description = "Genesys - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [
@@ -123,9 +123,7 @@ dev = [
 ]
 
 [project.scripts]
-fast-agent = "mcp_agent.cli.__main__:app"
-fastagent = "mcp_agent.cli.__main__:app"
-silsila = "mcp_agent.cli.__main__:app"
+genesys = "mcp_agent.cli.__main__:app"
 prompt-server = "mcp_agent.mcp.prompts.__main__:main"
 
 [tool.setuptools.package-data]

@@ -8,7 +8,7 @@ from mcp_agent.cli.commands import check_config, go, quickstart, setup
 from mcp_agent.cli.terminal import Application
 
 app = typer.Typer(
-    help="FastAgent CLI - Build effective agents using Model Context Protocol",
+    help="Genesys CLI - AI coordinator powered by Google Gemini with MCP integration",
     add_completion=False,  # We'll add this later when we have more commands
 )
 
@@ -29,11 +29,11 @@ def show_welcome() -> None:
     from importlib.metadata import version
 
     try:
-        app_version = version("fast-agent-mcp")
+        app_version = version("genesys")
     except:  # noqa: E722
         app_version = "unknown"
 
-    console.print(f"\nfast-agent {app_version} [dim](fast-agent-mcp)[/dim] ")
+    console.print(f"\ngenesys {app_version} [dim](genesys)[/dim] ")
 
     # Create a table for commands
     table = Table(title="\nAvailable Commands")
@@ -48,7 +48,7 @@ def show_welcome() -> None:
     console.print(table)
 
     console.print(
-        "\n[italic]get started with:[/italic] [bold][cyan]fast-agent[/cyan][/bold] [green]setup[/green]"
+        "\n[italic]get started with:[/italic] [bold][cyan]genesys[/cyan][/bold] [green]setup keys[/green]"
     )
 
 
@@ -60,7 +60,7 @@ def main(
     color: bool = typer.Option(True, "--color/--no-color", help="Enable/disable color output"),
     version: bool = typer.Option(False, "--version", help="Show version and exit"),
 ) -> None:
-    """FastAgent CLI - Build effective agents using Model Context Protocol (MCP).
+    """Genesys CLI - AI coordinator powered by Google Gemini with MCP integration.
 
     Use --help with any command for detailed usage information.
     """
@@ -72,10 +72,10 @@ def main(
         from importlib.metadata import version as get_version
 
         try:
-            app_version = get_version("fast-agent-mcp")
+            app_version = get_version("genesys")
         except:  # noqa: E722
             app_version = "unknown"
-        console.print(f"fast-agent-mcp v{app_version}")
+        console.print(f"genesys v{app_version}")
         raise typer.Exit()
 
     # Show welcome message if no command was invoked

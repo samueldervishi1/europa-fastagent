@@ -1,0 +1,116 @@
+name: Create Release with Assets
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build package
+        run: uv build
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          version=${GITHUB_REF#refs/tags/v}
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Genesys v${{ steps.get_version.outputs.version }}
+          body: |
+            ## Genesys v${{ steps.get_version.outputs.version }}
+
+            AI coordinator powered by Google Gemini with MCP integration.
+
+            ### Installation
+
+            **Ubuntu/Linux (Recommended):**
+            ```bash
+            bash -c "$(curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh)"
+            ```
+
+            **Manual Installation:**
+            ```bash
+            pip install https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.version }}/genesys-${{ steps.get_version.outputs.version }}-py3-none-any.whl
+            ```
+
+            ### Quick Start
+
+            1. **Configure API keys:**
+               ```bash
+               genesys setup keys
+               ```
+
+            2. **Start the AI coordinator:**
+               ```bash
+               genesys
+               ```
+
+            ### Required API Keys
+
+            - **Google Gemini API Key** (required): Get from [Google AI Studio](https://aistudio.google.com/app/apikey)
+            - **Tavily API Key** (optional, for web search): Get from [Tavily](https://tavily.com/)
+
+            ### Features
+
+            - Interactive AI coordinator terminal
+            - F1 data integration and live terminal
+            - Web search via Tavily MCP
+            - Filesystem operations via MCP
+            - Persistent memory across sessions
+            - Terminal command execution
+
+            ---
+
+            *Enjoy the interactive terminal with F1 data and MCP integration! 🏎️*
+          draft: false
+          prerelease: false
+
+      - name: Upload Wheel Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/genesys-${{ steps.get_version.outputs.version }}-py3-none-any.whl
+          asset_name: genesys-${{ steps.get_version.outputs.version }}-py3-none-any.whl
+          asset_content_type: application/octet-stream
+
+      - name: Upload Source Distribution Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/genesys-${{ steps.get_version.outputs.version }}.tar.gz
+          asset_name: genesys-${{ steps.get_version.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
