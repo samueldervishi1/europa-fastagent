@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 
 REPO="samueldervishi1/mcp"
 BINARY_NAME="tauricus"
-PROJECT_NAME="tauricus-cli"
+PROJECT_NAME="tauricus"
 
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -115,7 +115,14 @@ install_from_github() {
         exit 1
     fi
     
-    cd "$temp_dir/mcp-main"
+    # Find the extracted directory (it might not be exactly "mcp-main")
+    extracted_dir=$(find "$temp_dir" -maxdepth 1 -type d -name "mcp-*" | head -n 1)
+    if [ -z "$extracted_dir" ]; then
+        print_error "Failed to find extracted directory in $temp_dir"
+        exit 1
+    fi
+    
+    cd "$extracted_dir"
     
     print_status "Installing Python dependencies with UV..."
     # Install dependencies in the project directory
@@ -129,7 +136,7 @@ install_from_github() {
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR/tauricus-cli"
+PROJECT_DIR="$SCRIPT_DIR/tauricus"
 
 # Change to project directory and run start.py with UV
 cd "$PROJECT_DIR" && exec uv run start.py "$@"
@@ -202,7 +209,7 @@ setup_path() {
 }
 
 main() {
-    print_status "Installing tauricus - AI Coordinator powered by Google Gemini..."
+    print_status "Installing Tauricus - AI Coordinator powered by Google Gemini..."
     echo
     
     # Check system requirements

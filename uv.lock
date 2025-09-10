@@ -2038,7 +2038,7 @@ wheels = [
 
 [[package]]
 name = "tauricus"
-version = "0.0.13"
+version = "0.0.15"
 source = { editable = "." }
 dependencies = [
     { name = "a2a-types" },

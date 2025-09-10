@@ -35,8 +35,6 @@ mcp:
     tavily:
       command: npx
       args: ["-y", "@mcptools/mcp-tavily"]
-      env:
-        TAVILY_API_KEY: "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"
 
     # Terminal controller for secure command execution
     terminal:

@@ -8,7 +8,7 @@ from mcp_agent.cli.commands import check_config, go, quickstart, setup
 from mcp_agent.cli.terminal import Application
 
 app = typer.Typer(
-    help="tauricus CLI - AI coordinator powered by Google Gemini with MCP integration",
+    help="Tauricus - AI coordinator powered by Google Gemini with MCP integration",
     add_completion=False,  # We'll add this later when we have more commands
 )
 

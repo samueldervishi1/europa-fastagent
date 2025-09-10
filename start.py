@@ -38,7 +38,7 @@ logging.getLogger("mcp_agent").setLevel(logging.CRITICAL)
 """
 Smart Multi-Agent Coordinator
 
-High-performance coordinator that detects intent and routes to specialized agents:
+High-performance tauricus that detects intent and routes to specialized agents:
 - File operations → Filesystem MCP server
 
 Optimized for speed with caching, connection pooling, and async operations.
@@ -71,11 +71,11 @@ class ConfigManager:
 
 config_manager = ConfigManager()
 
-fast = FastAgent("Smart Agent Coordinator")
+fast = FastAgent("Tauricus")
 
 @fast.agent(
-    name="coordinator",
-    instruction="""You are a high-performance smart coordinator that efficiently detects user intent and routes to specialized solutions.
+    name="tauricus",
+    instruction="""You are a high-performance smart tauricus that efficiently detects user intent and routes to specialized solutions.
 
 IMPORTANT: When users ask about personal information (name, preferences, past conversations), ALWAYS search memory first using the Memory MCP server before responding.
 
@@ -111,7 +111,7 @@ PERFORMANCE OPTIMIZATIONS:
         maxTokens=4000       # Reasonable limit to prevent long responses
     ),
 )
-async def coordinator():
+async def tauricus():
     pass
 
 def setup_f1_split_terminal():
@@ -150,14 +150,14 @@ def setup_f1_split_terminal():
     
     else:
         try:
-            subprocess.run(['tmux', 'kill-session', '-t', 'f1-coordinator'], 
+            subprocess.run(['tmux', 'kill-session', '-t', 'f1-tauricus'], 
                          capture_output=True)
             
             env = os.environ.copy()
             env['F1_SPLIT_CREATED'] = '1'
             
             os.execvpe('tmux', [
-                'tmux', 'new-session', '-s', 'f1-coordinator',
+                'tmux', 'new-session', '-s', 'f1-tauricus',
                 '-c', str(PROJECT_ROOT),
                 f'uv run {__file__}',
                 ';', 'split-window', '-h', '-c', str(PROJECT_ROOT / 'f1-mcp'),
@@ -169,7 +169,7 @@ def setup_f1_split_terminal():
             
         except Exception as e:
             logger.error(f"Failed to create F1 tmux session: {e}")
-            print("Falling back to coordinator without split terminal")
+            print("Falling back to tauricus without split terminal")
             return False
 
 async def startup_tasks():

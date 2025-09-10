@@ -1,4 +1,4 @@
-"""Setup wizard for Genesys API key configuration."""
+"""Setup wizard for Tauricus API key configuration."""
 
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -50,7 +50,6 @@ class TauricusSetupWizard:
     def show_welcome(self):
         """Display welcome message."""
         welcome_text = Text()
-        welcome_text.append("🔑 ", style="bold blue")
         welcome_text.append("Tauricus API Configuration", style="bold cyan")
         
         panel = Panel(
@@ -128,11 +127,11 @@ class TauricusSetupWizard:
         gemini_key = config.get('google', {}).get('api_key')
         tavily_key = config.get('TAVILY_API_KEY')
         
-        console.print(f"Google Gemini: {'Configured' if status['has_gemini'] else '❌ Not configured'}")
+        console.print(f"Google Gemini: {'Configured' if status['has_gemini'] else 'Not configured'}")
         if status['has_gemini']:
             console.print(f"  Key: {self._mask_key(gemini_key)}")
             
-        console.print(f"Tavily Search: {'Configured' if status['has_tavily'] else '❌ Not configured'}")
+        console.print(f"Tavily Search: {'Configured' if status['has_tavily'] else 'Not configured'}")
         if status['has_tavily']:
             console.print(f"  Key: {self._mask_key(tavily_key)}")
         

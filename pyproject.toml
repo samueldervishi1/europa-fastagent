@@ -1,6 +1,6 @@
 [project]
 name = "tauricus"
-version = "0.0.15"
+version = "0.0.16"
 description = "Tauricus - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 classifiers = [

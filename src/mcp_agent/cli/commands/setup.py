@@ -70,12 +70,15 @@ openrouter:
     api_key: <your-api-key-here>
 
 
-# Example of setting an MCP Server environment variable
+# Example of setting MCP Server environment variables
 mcp:
     servers:
         brave:
             env:
                 BRAVE_API_KEY: <your_api_key_here>
+        tavily:
+            env:
+                TAVILY_API_KEY: <your_tavily_api_key_here>
 
 """
 
