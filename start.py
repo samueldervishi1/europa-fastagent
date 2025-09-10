@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import os
+import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -112,8 +114,80 @@ PERFORMANCE OPTIMIZATIONS:
 async def coordinator():
     pass
 
+def setup_f1_split_terminal():
+    """Set up split terminal with F1 display on the right"""
+    try:
+        subprocess.run(['tmux', '-V'], capture_output=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("tmux not available - F1 split disabled")
+        return False
+    
+    if os.environ.get('TMUX'):
+        try:
+            subprocess.run([
+                'tmux', 'split-window', '-h', '-c', str(PROJECT_ROOT / 'f1-mcp')
+            ], check=True)
+            
+            subprocess.run([
+                'tmux', 'send-keys', '-t', '1', './f1_display.sh', 'C-m'
+            ], check=True)
+            
+            subprocess.run([
+                'tmux', 'select-pane', '-t', '0', '-T', 'MCP Coordinator'
+            ], check=True)
+            subprocess.run([
+                'tmux', 'select-pane', '-t', '1', '-T', 'F1 Display'  
+            ], check=True)
+            
+            subprocess.run(['tmux', 'select-pane', '-t', '0'], check=True)
+            
+            print("F1 display started in right pane!")
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to set up F1 split: {e}")
+            return False
+    
+    else:
+        try:
+            subprocess.run(['tmux', 'kill-session', '-t', 'f1-coordinator'], 
+                         capture_output=True)
+            
+            env = os.environ.copy()
+            env['F1_SPLIT_CREATED'] = '1'
+            
+            os.execvpe('tmux', [
+                'tmux', 'new-session', '-s', 'f1-coordinator',
+                '-c', str(PROJECT_ROOT),
+                f'uv run {__file__}',
+                ';', 'split-window', '-h', '-c', str(PROJECT_ROOT / 'f1-mcp'),
+                './f1_display.sh',
+                ';', 'select-pane', '-t', '0',
+                ';', 'set-option', 'remain-on-exit', 'off',
+                ';', 'set-hook', '-g', 'pane-exited', 'kill-session'
+            ], env)
+            
+        except Exception as e:
+            logger.error(f"Failed to create F1 tmux session: {e}")
+            print("Falling back to coordinator without split terminal")
+            return False
+
 async def startup_tasks():
     tasks = []
+    
+    if os.environ.get('TMUX') and not os.environ.get('F1_SPLIT_CREATED'):
+        try:
+            result = subprocess.run(['tmux', 'list-panes', '-F', '#{pane_id}'], 
+                                  capture_output=True, text=True)
+            pane_count = len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0
+            if pane_count == 1:
+                f1_split_enabled = setup_f1_split_terminal()
+                if f1_split_enabled:
+                    print("F1 split terminal active - F1 data available via coordinator")
+        except Exception as e:
+            logger.error(f"Error checking panes: {e}")
+    elif os.environ.get('F1_SPLIT_CREATED'):
+        print("F1 split terminal active - F1 data available via coordinator")
     
     if tasks:
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -130,6 +204,11 @@ async def main():
     try:        
         print(f"FastAgent Ultimate MCP Coordinator v{__version__}")
         print()
+        
+        if not os.environ.get('TMUX') and not os.environ.get('F1_SPLIT_DISABLED'):
+            f1_split_result = setup_f1_split_terminal()
+            if f1_split_result:
+                return
         
         await startup_tasks()
         

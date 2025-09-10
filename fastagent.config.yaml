@@ -43,7 +43,7 @@ mcp:
       command: uvx
       args: ["terminal_controller"]
       env: {}
-    
+
     # Memory server for persistent knowledge across sessions
     memory:
       command: npx
