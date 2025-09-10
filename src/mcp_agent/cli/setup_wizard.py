@@ -278,7 +278,7 @@ class TauricusSetupWizard:
 
 def run_setup_wizard():
     """CLI entry point for setup wizard."""
-    wizard = GenesysSetupWizard()
+    wizard = TauricusSetupWizard()
     success = wizard.run()
     
     if not success:
