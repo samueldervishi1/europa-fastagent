@@ -11,6 +11,12 @@ from typing import Any, Dict
 
 import yaml
 
+try:
+    from weather import get_simple_weather
+except ImportError:
+    def get_simple_weather():
+        return "Weather module unavailable"
+
 PROJECT_ROOT = Path(__file__).parent.resolve()
 
 path_str = str(PROJECT_ROOT)
@@ -26,14 +32,14 @@ except ImportError as e:
     sys.exit(1)
 
 logging.basicConfig(
-    level=logging.CRITICAL,  # Only show critical errors
+    level=logging.ERROR,  # Show errors and critical messages
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-logging.getLogger("google_genai.models").setLevel(logging.CRITICAL)
-logging.getLogger("httpx").setLevel(logging.CRITICAL)
-logging.getLogger("mcp_agent").setLevel(logging.CRITICAL)
+logging.getLogger("google_genai.models").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("mcp_agent").setLevel(logging.ERROR)
 
 """
 Smart Multi-Agent Coordinator
@@ -74,8 +80,8 @@ config_manager = ConfigManager()
 fast = FastAgent("Tauricus")
 
 @fast.agent(
-    name="tauricus",
-    instruction="""You are a high-performance smart tauricus that efficiently detects user intent and routes to specialized solutions.
+    name="maestro",
+    instruction="""You are a high-performance smart maestro that efficiently detects user intent and routes to specialized solutions.
 
 IMPORTANT: When users ask about personal information (name, preferences, past conversations), ALWAYS search memory first using the Memory MCP server before responding.
 
@@ -97,6 +103,14 @@ OPTIMIZED ROUTING LOGIC:
    - Keywords: "remember", "store", "recall", "forget", "what did I", "my preferences", "save this", "my name", "who am I"
    - Action: Use Memory MCP server - ALWAYS search memory first for user info, then store new information
 
+5. Email & Communication:
+   - Keywords: "email", "send", "inbox", "gmail", "unread", "message", "compose", "meeting", "schedule"
+   - Action: Use Gmail MCP server for email management, sending, and scheduling
+
+6. GitHub & Repository Management:
+   - Keywords: "repo", "repository", "github", "commit", "push", "branch", "issue", "pull request", "PR", "create repo"
+   - Action: Use GitHub MCP server for repository creation, file management, and GitHub operations
+
 PERFORMANCE OPTIMIZATIONS:
 - Concurrent operation handling
 - Response caching for repeated requests
@@ -104,7 +118,7 @@ PERFORMANCE OPTIMIZATIONS:
 - Lazy loading of heavy resources
 - Efficient memory usage patterns
 """,
-    servers=["filesystem", "tavily", "terminal", "memory"],
+    servers=["filesystem", "tavily", "terminal", "memory", "gmail", "github"],
     model="google.gemini-2.0-flash-exp",
     request_params=RequestParams(
         temperature=0.1,      # Lower temperature for faster, more deterministic responses
@@ -115,7 +129,7 @@ async def tauricus():
     pass
 
 def setup_f1_split_terminal():
-    """Set up split terminal with F1 display on the right"""
+    """Set up 2-pane terminal: coordinator (left), F1 display (right)"""
     try:
         subprocess.run(['tmux', '-V'], capture_output=True, check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -202,7 +216,8 @@ async def startup_tasks():
 
 async def main():
     try:        
-        print(f"Tauricus — built on FastAgent MCP v{__version__}")
+        weather_info = get_simple_weather()
+        print(f"Tauricus — built on FastAgent MCP v{__version__} | {weather_info}")
         print()
         
         if not os.environ.get('TMUX') and not os.environ.get('F1_SPLIT_DISABLED'):

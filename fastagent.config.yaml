@@ -20,14 +20,14 @@ mcp:
     # Filesystem server provides file operations with configurable access controls
     filesystem:
       command: npx
-      args:
-        [
+      args: [
           "-y",
           "@modelcontextprotocol/server-filesystem",
           ".",
-          "/home/samuel/Downloads",
+          "/home/samuel/Downloads", # ← change this path to your own folder
         ]
       env:
+        # Change this to match your own folder path
         ALLOW_PATHS: "/home/samuel/Downloads"
         ALLOW_OPERATIONS: "read,write,delete,move,copy,list"
 
@@ -47,3 +47,14 @@ mcp:
       command: npx
       args: ["-y", "@modelcontextprotocol/server-memory"]
       env: {}
+
+    # Gmail integration with auto OAuth2 authentication
+    gmail:
+      command: npx
+      args: ["-y", "@gongrzhe/server-gmail-autoauth-mcp"]
+      env: {}
+
+    # GitHub integration for repository management (using official server)
+    github:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
