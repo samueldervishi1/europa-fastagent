@@ -1,5 +1,5 @@
 """
-Version information for FastAgent Ultimate MCP Coordinator
+Version information for Tauricus — built on FastAgent MCP
 
 This file dynamically reads version from pyproject.toml to avoid duplication.
 """

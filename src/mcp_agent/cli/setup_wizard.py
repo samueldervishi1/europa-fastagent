@@ -13,8 +13,8 @@ from rich.text import Text
 console = Console()
 
 
-class GenesysSetupWizard:
-    """Interactive setup wizard for Genesys API keys."""
+class TauricusSetupWizard:
+    """Interactive setup wizard for Tauricus API keys."""
     
     def __init__(self):
         self.secrets_file = Path("fastagent.secrets.yaml")
@@ -51,7 +51,7 @@ class GenesysSetupWizard:
         """Display welcome message."""
         welcome_text = Text()
         welcome_text.append("🔑 ", style="bold blue")
-        welcome_text.append("Genesys API Configuration", style="bold cyan")
+        welcome_text.append("Tauricus API Configuration", style="bold cyan")
         
         panel = Panel(
             welcome_text,
@@ -91,9 +91,9 @@ class GenesysSetupWizard:
             if key and key.strip():
                 return key.strip()
             
-            console.print("[red]Google Gemini API key is required to run Genesys![/red]")
+            console.print("[red]Google Gemini API key is required to run Tauricus![/red]")
             if not Confirm.ask("Try again?", default=True):
-                console.print("[yellow]Without Gemini API key, Genesys will not function.[/yellow]")
+                console.print("[yellow]Without Gemini API key, Tauricus will not function.[/yellow]")
                 return None
     
     def prompt_for_tavily_key(self, current_key: Optional[str] = None) -> Optional[str]:
@@ -177,16 +177,16 @@ class GenesysSetupWizard:
             console.print("Tavily API key not configured - Web search will return 400 errors")
         else:
             console.print("[red]Configuration incomplete![/red]")
-            console.print("Google Gemini API key is required to run Genesys")
+            console.print("Google Gemini API key is required to run Tauricus")
             return False
             
         console.print(f"\n[dim]Configuration saved to: {self.secrets_file.absolute()}[/dim]")
         console.print("\n[bold cyan]Next steps:[/bold cyan]")
-        console.print("• Run '[bold]genesys[/bold]' to start the AI coordinator")
+        console.print("• Run '[bold]tauricus[/bold]' to start the AI coordinator")
         console.print("• Enjoy the interactive terminal with F1 data and MCP integration!")
         
         if not tavily_configured:
-            console.print("\n[yellow]Add Tavily key later with:[/yellow] [bold]genesys setup[/bold]")
+            console.print("\n[yellow]Add Tavily key later with:[/yellow] [bold]tauricus setup[/bold]")
         
         return True
     

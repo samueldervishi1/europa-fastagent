@@ -1,7 +1,7 @@
 [project]
-name = "genesys"
-version = "0.0.13"
-description = "Genesys - AI coordinator powered by Google Gemini with MCP integration"
+name = "tauricus"
+version = "0.0.15"
+description = "Tauricus - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [
@@ -22,7 +22,6 @@ dependencies = [
     "typer>=0.15.1",
     "anthropic>=0.49.0",
     "openai>=1.63.2",
-    "azure-identity>=1.14.0",
     "prompt-toolkit>=3.0.50",
     "aiohttp>=3.11.13",
     "a2a-types>=0.1.0",
@@ -48,10 +47,7 @@ dependencies = [
 openai = [
     "openai>=1.58.1",
 ]
-# For Azure OpenAI with DefaultAzureCredential support, install with: pip install genesys[azure]
-azure = [
-    "azure-identity>=1.14.0"
-]
+
 dev = [
     "anthropic>=0.42.0",
     "pre-commit>=4.0.1",
@@ -123,7 +119,7 @@ dev = [
 ]
 
 [project.scripts]
-genesys = "mcp_agent.cli.__main__:app"
+tauricus = "mcp_agent.cli.__main__:app"
 prompt-server = "mcp_agent.mcp.prompts.__main__:main"
 
 [tool.setuptools.package-data]

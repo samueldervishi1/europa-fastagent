@@ -1,4 +1,4 @@
-# FastAgent Ultimate MCP Coordinator
+# Tauricus — built on FastAgent MCP
 
 A high-performance AI automation platform powered by **Google Gemini 2.0 Flash Experimental** with intelligent MCP server coordination for seamless task automation.
 
@@ -115,7 +115,7 @@ uv run start.py
 You'll see:
 
 ```
-FastAgent Ultimate MCP Coordinator v0.0.1
+Tauricus — built on FastAgent MCP
 
 Type /help for commands, @agent to switch agent. Ctrl+T toggles multiline mode.
 

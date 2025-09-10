@@ -10,8 +10,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 REPO="samueldervishi1/mcp"
-BINARY_NAME="genesys"
-PROJECT_NAME="genesys-cli"
+BINARY_NAME="tauricus"
+PROJECT_NAME="tauricus-cli"
 
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -91,7 +91,7 @@ check_node() {
 }
 
 install_from_github() {
-    print_status "Installing Genesys from GitHub..."
+    print_status "Installing tauricus from GitHub..."
     
     local temp_dir=$(mktemp -d)
     local install_dir="$HOME/.local/bin"
@@ -129,7 +129,7 @@ install_from_github() {
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR/genesys-cli"
+PROJECT_DIR="$SCRIPT_DIR/tauricus-cli"
 
 # Change to project directory and run start.py with UV
 cd "$PROJECT_DIR" && exec uv run start.py "$@"
@@ -148,7 +148,7 @@ EOF
         echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
         echo
         print_status "Then restart your terminal or run: source ~/.bashrc"
-        print_status "Alternatively, you can run genesys with: $install_dir/$BINARY_NAME"
+        print_status "Alternatively, you can run tauricus with: $install_dir/$BINARY_NAME"
     fi
 }
 
@@ -202,7 +202,7 @@ setup_path() {
 }
 
 main() {
-    print_status "Installing Genesys - AI Coordinator powered by Google Gemini..."
+    print_status "Installing tauricus - AI Coordinator powered by Google Gemini..."
     echo
     
     # Check system requirements
@@ -216,13 +216,13 @@ main() {
     if verify_installation; then
         setup_path
         echo
-        print_success "🎉 Genesys installation completed successfully!"
+        print_success "Tauricus installation completed successfully!"
         echo
         print_status "Next steps:"
         print_status "1. Run '$BINARY_NAME setup keys' to configure your API keys"
         print_status "2. Run '$BINARY_NAME' to start the AI coordinator with F1 data!"
         echo
-        print_status "📖 You'll need:"
+        print_status "You'll need:"
         print_status "   • Google Gemini API key (required) - https://aistudio.google.com/app/apikey"
         print_status "   • Tavily API key (optional, for web search) - https://tavily.com/"
         echo

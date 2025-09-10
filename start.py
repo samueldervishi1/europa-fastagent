@@ -183,12 +183,12 @@ async def startup_tasks():
             if pane_count == 1:
                 f1_split_enabled = setup_f1_split_terminal()
                 if f1_split_enabled:
-                    print("F1 split terminal active - F1 data available via coordinator")
+                    pass
         except Exception as e:
             logger.error(f"Error checking panes: {e}")
     elif os.environ.get('F1_SPLIT_CREATED'):
-        print("F1 split terminal active - F1 data available via coordinator")
-    
+        pass
+
     if tasks:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
@@ -202,7 +202,7 @@ async def startup_tasks():
 
 async def main():
     try:        
-        print(f"FastAgent Ultimate MCP Coordinator v{__version__}")
+        print(f"Tauricus — built on FastAgent MCP v{__version__}")
         print()
         
         if not os.environ.get('TMUX') and not os.environ.get('F1_SPLIT_DISABLED'):

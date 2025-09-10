@@ -24,7 +24,7 @@ from mcp_agent.core.exceptions import PromptExitError
 
 # Get the application version
 try:
-    app_version = version("genesys")
+    app_version = version("tauricus")
 except:  # noqa: E722
     app_version = "unknown"
 

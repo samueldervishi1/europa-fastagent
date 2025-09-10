@@ -79,7 +79,7 @@ async def configure_otel(config: "Settings") -> None:
     from importlib.metadata import version
 
     try:
-        app_version = version("genesys")
+        app_version = version("tauricus")
     except:  # noqa: E722
         app_version = "unknown"
 

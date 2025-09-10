@@ -50,7 +50,7 @@ jobs:
           CURRENT_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
           echo "Current version: $CURRENT_VERSION"
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          
+
           # Check if this version already has a tag
           if git rev-parse "v$CURRENT_VERSION" >/dev/null 2>&1; then
             echo "Tag v$CURRENT_VERSION already exists, skipping release"
@@ -130,9 +130,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version_check.outputs.current_version }}
-          name: "Genesys v${{ steps.version_check.outputs.current_version }}"
+          name: "Tauricus v${{ steps.version_check.outputs.current_version }}"
           body: |
-            ## Genesys v${{ steps.version_check.outputs.current_version }}
+            ## Tauricus v${{ steps.version_check.outputs.current_version }}
 
             AI coordinator powered by Google Gemini with MCP integration.
 
@@ -145,19 +145,19 @@ jobs:
 
             **Manual Installation:**
             ```bash
-            pip install https://github.com/${{ github.repository }}/releases/download/v${{ steps.version_check.outputs.current_version }}/genesys-${{ steps.version_check.outputs.current_version }}-py3-none-any.whl
+            pip install https://github.com/${{ github.repository }}/releases/download/v${{ steps.version_check.outputs.current_version }}/tauricus-${{ steps.version_check.outputs.current_version }}-py3-none-any.whl
             ```
 
             ### Quick Start
 
             1. **Configure API keys:**
                ```bash
-               genesys setup keys
+               tauricus setup keys
                ```
 
             2. **Start the AI coordinator:**
                ```bash
-               genesys
+               tauricus
                ```
 
             ### Required API Keys
@@ -185,5 +185,5 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.version_check.outputs.current_version, 'beta') }}
           files: |
-            dist/genesys-${{ steps.version_check.outputs.current_version }}-py3-none-any.whl
-            dist/genesys-${{ steps.version_check.outputs.current_version }}.tar.gz
+            dist/tauricus-${{ steps.version_check.outputs.current_version }}-py3-none-any.whl
+            dist/tauricus-${{ steps.version_check.outputs.current_version }}.tar.gz

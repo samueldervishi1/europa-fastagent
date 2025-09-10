@@ -1,5 +1,3 @@
-"""Genesys - AI coordinator powered by Google Gemini with MCP integration"""
-
 # Import important MCP types
 from mcp.types import (
     CallToolResult,
