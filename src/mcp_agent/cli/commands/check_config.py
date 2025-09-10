@@ -166,7 +166,7 @@ def check_api_keys(secrets_summary: dict, config_summary: dict) -> dict:
 def get_fastagent_version() -> str:
     """Get the installed version of FastAgent."""
     try:
-        return version("fast-agent-mcp")
+        return version("genesys")
     except:  # noqa: E722
         return "unknown"
 

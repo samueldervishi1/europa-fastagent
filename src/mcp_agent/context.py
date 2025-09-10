@@ -79,7 +79,7 @@ async def configure_otel(config: "Settings") -> None:
     from importlib.metadata import version
 
     try:
-        app_version = version("fast-agent-mcp")
+        app_version = version("genesys")
     except:  # noqa: E722
         app_version = "unknown"
 

@@ -1,4 +1,4 @@
-"""fast-agent - (fast-agent-mcp) An MCP native agent application framework"""
+"""Genesys - AI coordinator powered by Google Gemini with MCP integration"""
 
 # Import important MCP types
 from mcp.types import (

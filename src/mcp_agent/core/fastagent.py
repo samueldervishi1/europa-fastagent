@@ -162,10 +162,10 @@ class FastAgent:
             # Handle version flag
             if self.args.version:
                 try:
-                    app_version = get_version("fast-agent-mcp")
+                    app_version = get_version("genesys")
                 except:  # noqa: E722
                     app_version = "unknown"
-                print(f"fast-agent-mcp v{app_version}")
+                print(f"genesys v{app_version}")
                 sys.exit(0)
         # --- End of wrapped logic ---
 

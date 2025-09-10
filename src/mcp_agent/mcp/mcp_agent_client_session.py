@@ -61,8 +61,8 @@ class MCPAgentClientSession(ClientSession, ContextDependent):
         # Extract server_name if provided in kwargs
         from importlib.metadata import version
 
-        version = version("fast-agent-mcp") or "dev"
-        fast_agent: Implementation = Implementation(name="fast-agent-mcp", version=version)
+        version = version("genesys") or "dev"
+        fast_agent: Implementation = Implementation(name="genesys", version=version)
 
         self.session_server_name = kwargs.pop("server_name", None)
         # Extract the notification callbacks if provided

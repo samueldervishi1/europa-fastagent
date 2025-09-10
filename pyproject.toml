@@ -1,6 +1,6 @@
 [project]
 name = "genesys"
-version = "0.0.10"
+version = "0.0.11"
 description = "Genesys - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -48,7 +48,7 @@ dependencies = [
 openai = [
     "openai>=1.58.1",
 ]
-# For Azure OpenAI with DefaultAzureCredential support, install with: pip install fast-agent-mcp[azure]
+# For Azure OpenAI with DefaultAzureCredential support, install with: pip install genesys[azure]
 azure = [
     "azure-identity>=1.14.0"
 ]
