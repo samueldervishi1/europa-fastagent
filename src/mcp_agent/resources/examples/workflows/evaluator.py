@@ -61,9 +61,7 @@ async def main() -> None:
             "Alex Johnson, 3 years in machine learning, contributor to open-source AI projects, "
             "proficient in Python and TensorFlow. Motivated by building scalable AI systems to solve real-world problems."
         )
-        company_information = (
-            "Look up from the LastMile AI About page: https://lastmileai.dev/about"
-        )
+        company_information = "Look up from the LastMile AI About page: https://lastmileai.dev/about"
 
         # Send the task
         await agent.cover_letter_writer.send(

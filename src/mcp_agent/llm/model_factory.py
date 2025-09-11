@@ -195,24 +195,17 @@ class ModelFactory:
         if provider is None:
             provider = cls.DEFAULT_PROVIDERS.get(model_name_str)
             if provider is None:
-                raise ModelConfigError(
-                    f"Unknown model or provider for: {model_string}. Model name parsed as '{model_name_str}'"
-                )
+                raise ModelConfigError(f"Unknown model or provider for: {model_string}. Model name parsed as '{model_name_str}'")
 
         if provider == Provider.TENSORZERO and not model_name_str:
             raise ModelConfigError(
-                f"TensorZero provider requires a function name after the provider "
-                f"(e.g., tensorzero.my-function), got: {model_string}"
+                f"TensorZero provider requires a function name after the provider (e.g., tensorzero.my-function), got: {model_string}"
             )
 
-        return ModelConfig(
-            provider=provider, model_name=model_name_str, reasoning_effort=reasoning_effort
-        )
+        return ModelConfig(provider=provider, model_name=model_name_str, reasoning_effort=reasoning_effort)
 
     @classmethod
-    def create_factory(
-        cls, model_string: str, request_params: Optional[RequestParams] = None
-    ) -> Callable[..., AugmentedLLMProtocol]:
+    def create_factory(cls, model_string: str, request_params: Optional[RequestParams] = None) -> Callable[..., AugmentedLLMProtocol]:
         """
         Creates a factory function that follows the attach_llm protocol.
 
@@ -226,10 +219,7 @@ class ModelFactory:
         config = cls.parse_model_string(model_string)
 
         # Ensure provider is valid before trying to access PROVIDER_CLASSES with it
-        if (
-            config.provider not in cls.PROVIDER_CLASSES
-            and config.model_name not in cls.MODEL_SPECIFIC_CLASSES
-        ):
+        if config.provider not in cls.PROVIDER_CLASSES and config.model_name not in cls.MODEL_SPECIFIC_CLASSES:
             # This check is important if a provider (like old GOOGLE) is commented out from PROVIDER_CLASSES
             raise ModelConfigError(
                 f"Provider '{config.provider}' not configured in PROVIDER_CLASSES and model '{config.model_name}' not in MODEL_SPECIFIC_CLASSES."
@@ -241,9 +231,7 @@ class ModelFactory:
             # This line is now safer due to the check above
             llm_class = cls.PROVIDER_CLASSES[config.provider]
 
-        def factory(
-            agent: Agent, request_params: Optional[RequestParams] = None, **kwargs
-        ) -> AugmentedLLMProtocol:
+        def factory(agent: Agent, request_params: Optional[RequestParams] = None, **kwargs) -> AugmentedLLMProtocol:
             base_params = RequestParams()
             base_params.model = config.model_name
             if config.reasoning_effort:

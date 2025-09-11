@@ -54,9 +54,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
 
         self.history: Memory[Dict[str, Any]] = SimpleMemory[Dict[str, Any]]()
 
-        self.logger.info(
-            f"TensorZero LLM provider initialized for function '{self._t0_function_name}'. History type: {type(self.history)}"
-        )
+        self.logger.info(f"TensorZero LLM provider initialized for function '{self._t0_function_name}'. History type: {type(self.history)}")
 
     @staticmethod
     def block_to_dict(block: Any) -> Dict[str, Any]:
@@ -104,20 +102,14 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                 base_url: Optional[str] = None
                 default_url = "http://localhost:3000"
 
-                if (
-                    self.context
-                    and self.context.config
-                    and hasattr(self.context.config, "tensorzero")
-                    and self.context.config.tensorzero
-                ):
+                if self.context and self.context.config and hasattr(self.context.config, "tensorzero") and self.context.config.tensorzero:
                     base_url = getattr(self.context.config.tensorzero, "base_url", None)
 
                 if not base_url:
                     if not self.context:
                         # Handle case where context itself is missing, log and use default
                         self.logger.warning(
-                            f"LLM context not found. Cannot read TensorZero Gateway base URL configuration. "
-                            f"Using default: {default_url}"
+                            f"LLM context not found. Cannot read TensorZero Gateway base URL configuration. Using default: {default_url}"
                         )
                     else:
                         self.logger.warning(
@@ -149,9 +141,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
         if merged_params.use_history:
             try:
                 current_api_messages = self.history.get() or []
-                self.logger.debug(
-                    f"Retrieved {len(current_api_messages)} API dict messages from history."
-                )
+                self.logger.debug(f"Retrieved {len(current_api_messages)} API dict messages from history.")
             except Exception as e:
                 self.logger.error(f"Error retrieving history: {e}")
 
@@ -177,9 +167,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
             current_t0_episode_id = self._t0_episode_id
 
             try:
-                self.logger.debug(
-                    f"Calling TensorZero inference (Iteration {i + 1}/{merged_params.max_iterations})..."
-                )
+                self.logger.debug(f"Calling TensorZero inference (Iteration {i + 1}/{merged_params.max_iterations})...")
                 t0_api_input_dict["messages"] = current_api_messages  # type: ignore
 
                 # [4] Call the TensorZero inference API
@@ -192,28 +180,17 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                     episode_id=current_t0_episode_id,
                 )
 
-                if not isinstance(
-                    response_iter_or_completion, (ChatInferenceResponse, JsonInferenceResponse)
-                ):
-                    self.logger.error(
-                        f"Unexpected TensorZero response type: {type(response_iter_or_completion)}"
-                    )
-                    final_assistant_message = [
-                        TextContent(type="text", text="Unexpected response type")
-                    ]
+                if not isinstance(response_iter_or_completion, (ChatInferenceResponse, JsonInferenceResponse)):
+                    self.logger.error(f"Unexpected TensorZero response type: {type(response_iter_or_completion)}")
+                    final_assistant_message = [TextContent(type="text", text="Unexpected response type")]
                     break  # Exit loop
 
                 # [5] quick check to confirm that episode_id is present and being used correctly by TensorZero
                 completion = response_iter_or_completion
                 if completion.episode_id:  #
                     self._t0_episode_id = str(completion.episode_id)
-                    if (
-                        self._t0_episode_id != current_t0_episode_id
-                        and current_t0_episode_id is not None
-                    ):
-                        raise Exception(
-                            f"Episode ID mismatch: {self._t0_episode_id} != {current_t0_episode_id}"
-                        )
+                    if self._t0_episode_id != current_t0_episode_id and current_t0_episode_id is not None:
+                        raise Exception(f"Episode ID mismatch: {self._t0_episode_id} != {current_t0_episode_id}")
 
                 # [6] Adapt TensorZero inference response to a format compatible with the broader framework
                 (
@@ -222,9 +199,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                     raw_tool_call_blocks,
                 ) = await self._adapt_t0_native_completion(completion, available_tools)
 
-                last_executed_results = (
-                    executed_results_this_iter  # Track results from this iteration
-                )
+                last_executed_results = executed_results_this_iter  # Track results from this iteration
 
                 # [7] If a text message was returned from the assistant, format that message using the multipart_converter_tensorzero.py helper methods and add this to the current list of API messages
                 assistant_api_content = []
@@ -233,9 +208,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                     if api_part:
                         assistant_api_content.append(api_part)
                 if raw_tool_call_blocks:
-                    assistant_api_content.extend(
-                        [self.block_to_dict(b) for b in raw_tool_call_blocks]
-                    )
+                    assistant_api_content.extend([self.block_to_dict(b) for b in raw_tool_call_blocks])
 
                 if assistant_api_content:
                     assistant_api_message_dict = {
@@ -244,9 +217,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                     }
                     current_api_messages.append(assistant_api_message_dict)
                 elif executed_results_this_iter:
-                    self.logger.debug(
-                        "Assistant turn contained only tool calls, no API message added."
-                    )
+                    self.logger.debug("Assistant turn contained only tool calls, no API message added.")
 
                 final_assistant_message = content_parts_this_turn
 
@@ -255,11 +226,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                     self.logger.debug(f"Iteration {i + 1}: No tool calls detected. Finishing loop.")
                     break
                 else:
-                    user_message_with_results = (
-                        TensorZeroConverter.convert_tool_results_to_t0_user_message(
-                            executed_results_this_iter
-                        )
-                    )
+                    user_message_with_results = TensorZeroConverter.convert_tool_results_to_t0_user_message(executed_results_this_iter)
                     if user_message_with_results:
                         current_api_messages.append(user_message_with_results)
                     else:
@@ -285,17 +252,13 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                 return PromptMessageMultipart(role="assistant", content=[error_content])
 
         # [9] Construct the final assistant message and update history
-        final_message_to_return = PromptMessageMultipart(
-            role="assistant", content=final_assistant_message
-        )
+        final_message_to_return = PromptMessageMultipart(role="assistant", content=final_assistant_message)
 
         if merged_params.use_history:
             try:
                 # Store the final list of API DICTIONARIES in history
                 self.history.set(current_api_messages)
-                self.logger.debug(
-                    f"Updated self.history with {len(current_api_messages)} API message dicts."
-                )
+                self.logger.debug(f"Updated self.history with {len(current_api_messages)} API message dicts.")
             except Exception as e:
                 self.logger.error(f"Failed to update self.history after loop: {e}")
 
@@ -329,13 +292,8 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
             tools_response = await self.aggregator.list_tools()
             if tools_response and hasattr(tools_response, "tools") and tools_response.tools:
                 for mcp_tool in tools_response.tools:
-                    if (
-                        not isinstance(mcp_tool.inputSchema, dict)
-                        or mcp_tool.inputSchema.get("type") != "object"
-                    ):
-                        self.logger.warning(
-                            f"Tool '{mcp_tool.name}' has invalid parameters schema. Skipping."
-                        )
+                    if not isinstance(mcp_tool.inputSchema, dict) or mcp_tool.inputSchema.get("type") != "object":
+                        self.logger.warning(f"Tool '{mcp_tool.name}' has invalid parameters schema. Skipping.")
                         continue
                     t0_tool_dict = {
                         "name": mcp_tool.name,
@@ -387,30 +345,22 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                         tool_input = {}
 
                     if tool_use_id and tool_name:
-                        self.show_tool_call(
-                            available_tools_for_display, tool_name, json.dumps(tool_input)
-                        )
+                        self.show_tool_call(available_tools_for_display, tool_name, json.dumps(tool_input))
                         mcp_tool_request = CallToolRequest(
                             method="tools/call",
                             params=CallToolRequestParams(name=tool_name, arguments=tool_input),
                         )
                         try:
-                            result: CallToolResult = await self.call_tool(
-                                mcp_tool_request, tool_use_id
-                            )
+                            result: CallToolResult = await self.call_tool(mcp_tool_request, tool_use_id)
                             setattr(result, "_t0_tool_use_id_temp", tool_use_id)
                             setattr(result, "_t0_tool_name_temp", tool_name)
                             setattr(result, "_t0_is_error_temp", False)
                             executed_tool_results.append(result)
                             self.show_oai_tool_result(str(result))
                         except Exception as e:
-                            self.logger.error(
-                                f"Error executing tool {tool_name} (id: {tool_use_id}): {e}"
-                            )
+                            self.logger.error(f"Error executing tool {tool_name} (id: {tool_use_id}): {e}")
                             error_text = f"Error executing tool {tool_name}: {str(e)}"
-                            error_result = CallToolResult(
-                                isError=True, content=[TextContent(type="text", text=error_text)]
-                            )
+                            error_result = CallToolResult(isError=True, content=[TextContent(type="text", text=error_text)])
                             setattr(error_result, "_t0_tool_use_id_temp", tool_use_id)
                             setattr(error_result, "_t0_tool_name_temp", tool_name)
                             setattr(error_result, "_t0_is_error_temp", True)
@@ -421,9 +371,7 @@ class TensorZeroAugmentedLLM(AugmentedLLM[Dict[str, Any], Any]):
                     thought_text = getattr(block, "text", None)
                     self.logger.debug(f"TensorZero thought: {thought_text}")
                 else:
-                    self.logger.warning(
-                        f"TensorZero Adapt: Skipping unknown block type: {block_type}"
-                    )
+                    self.logger.warning(f"TensorZero Adapt: Skipping unknown block type: {block_type}")
 
         elif isinstance(completion, JsonInferenceResponse):
             # `completion.output.raw` should always be present unless the LLM provider returns unexpected data

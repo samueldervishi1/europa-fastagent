@@ -156,9 +156,7 @@ class AgentApp:
         Returns:
             GetPromptResult containing the prompt information
         """
-        return await self._agent(agent_name).get_prompt(
-            prompt_name=prompt_name, arguments=arguments, server_name=server_name
-        )
+        return await self._agent(agent_name).get_prompt(prompt_name=prompt_name, arguments=arguments, server_name=server_name)
 
     async def with_resource(
         self,
@@ -217,9 +215,7 @@ class AgentApp:
         Returns:
             ReadResourceResult object containing the resource content
         """
-        return await self._agent(agent_name).get_resource(
-            resource_uri=resource_uri, server_name=server_name
-        )
+        return await self._agent(agent_name).get_resource(resource_uri=resource_uri, server_name=server_name)
 
     @deprecated
     async def prompt(self, agent_name: str | None = None, default_prompt: str = "") -> str:

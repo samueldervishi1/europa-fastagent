@@ -108,11 +108,7 @@ class RichProgressDisplay:
             task_name=task_name,
         )
 
-        if (
-            event.action == ProgressAction.INITIALIZED
-            or event.action == ProgressAction.READY
-            or event.action == ProgressAction.LOADED
-        ):
+        if event.action == ProgressAction.INITIALIZED or event.action == ProgressAction.READY or event.action == ProgressAction.LOADED:
             self._progress.update(task_id, completed=100, total=100)
         elif event.action == ProgressAction.FINISHED:
             self._progress.update(

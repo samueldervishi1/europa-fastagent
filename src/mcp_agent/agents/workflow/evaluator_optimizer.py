@@ -51,9 +51,7 @@ class EvaluationResult(BaseModel):
     rating: QualityRating = Field(description="Quality rating of the response")
     feedback: str = Field(description="Specific feedback and suggestions for improvement")
     needs_improvement: bool = Field(description="Whether the output needs further improvement")
-    focus_areas: List[str] = Field(
-        default_factory=list, description="Specific areas to focus on in next iteration"
-    )
+    focus_areas: List[str] = Field(default_factory=list, description="Specific areas to focus on in next iteration")
 
 
 class EvaluatorOptimizerAgent(BaseAgent):
@@ -139,15 +137,11 @@ class EvaluatorOptimizerAgent(BaseAgent):
             logger.debug(f"Evaluating response (iteration {refinement_count + 1})")
 
             # Evaluate current response
-            eval_prompt = self._build_eval_prompt(
-                request=request, response=response.all_text(), iteration=refinement_count
-            )
+            eval_prompt = self._build_eval_prompt(request=request, response=response.all_text(), iteration=refinement_count)
 
             # Create evaluation message and get structured evaluation result
             eval_message = Prompt.user(eval_prompt)
-            evaluation_result, _ = await self.evaluator_agent.structured(
-                [eval_message], EvaluationResult, request_params
-            )
+            evaluation_result, _ = await self.evaluator_agent.structured([eval_message], EvaluationResult, request_params)
 
             # If structured parsing failed, use default evaluation
             if evaluation_result is None:

@@ -155,11 +155,7 @@ async def create_agents_by_type(
 
             elif agent_type == AgentType.ORCHESTRATOR:
                 # Get base params configured with model settings
-                base_params = (
-                    config.default_request_params.model_copy()
-                    if config.default_request_params
-                    else RequestParams()
-                )
+                base_params = config.default_request_params.model_copy() if config.default_request_params else RequestParams()
                 base_params.use_history = False  # Force no history for orchestrator
 
                 # Get the child agents
@@ -184,9 +180,7 @@ async def create_agents_by_type(
 
                 # Attach LLM to the orchestrator
                 llm_factory = model_factory_func(model=config.model)
-                await orchestrator.attach_llm(
-                    llm_factory, request_params=config.default_request_params
-                )
+                await orchestrator.attach_llm(llm_factory, request_params=config.default_request_params)
 
                 result_agents[name] = orchestrator
 
@@ -199,9 +193,7 @@ async def create_agents_by_type(
                 if not fan_in_name:
                     # Create default fan-in agent with auto-generated name
                     fan_in_name = f"{name}_fan_in"
-                    fan_in_agent = await _create_default_fan_in_agent(
-                        fan_in_name, app_instance.context, model_factory_func
-                    )
+                    fan_in_agent = await _create_default_fan_in_agent(fan_in_name, app_instance.context, model_factory_func)
                     # Add to result_agents so it's registered properly
                     result_agents[fan_in_name] = fan_in_agent
                 elif fan_in_name not in active_agents:
@@ -345,11 +337,7 @@ async def create_agents_in_dependency_order(
         if AgentType.BASIC.value in [agents_dict[name]["type"] for name in group]:
             basic_agents = await create_agents_by_type(
                 app_instance,
-                {
-                    name: agents_dict[name]
-                    for name in group
-                    if agents_dict[name]["type"] == AgentType.BASIC.value
-                },
+                {name: agents_dict[name] for name in group if agents_dict[name]["type"] == AgentType.BASIC.value},
                 AgentType.BASIC,
                 active_agents,
                 model_factory_func,
@@ -360,11 +348,7 @@ async def create_agents_in_dependency_order(
         if AgentType.PARALLEL.value in [agents_dict[name]["type"] for name in group]:
             parallel_agents = await create_agents_by_type(
                 app_instance,
-                {
-                    name: agents_dict[name]
-                    for name in group
-                    if agents_dict[name]["type"] == AgentType.PARALLEL.value
-                },
+                {name: agents_dict[name] for name in group if agents_dict[name]["type"] == AgentType.PARALLEL.value},
                 AgentType.PARALLEL,
                 active_agents,
                 model_factory_func,
@@ -375,11 +359,7 @@ async def create_agents_in_dependency_order(
         if AgentType.ROUTER.value in [agents_dict[name]["type"] for name in group]:
             router_agents = await create_agents_by_type(
                 app_instance,
-                {
-                    name: agents_dict[name]
-                    for name in group
-                    if agents_dict[name]["type"] == AgentType.ROUTER.value
-                },
+                {name: agents_dict[name] for name in group if agents_dict[name]["type"] == AgentType.ROUTER.value},
                 AgentType.ROUTER,
                 active_agents,
                 model_factory_func,
@@ -390,11 +370,7 @@ async def create_agents_in_dependency_order(
         if AgentType.CHAIN.value in [agents_dict[name]["type"] for name in group]:
             chain_agents = await create_agents_by_type(
                 app_instance,
-                {
-                    name: agents_dict[name]
-                    for name in group
-                    if agents_dict[name]["type"] == AgentType.CHAIN.value
-                },
+                {name: agents_dict[name] for name in group if agents_dict[name]["type"] == AgentType.CHAIN.value},
                 AgentType.CHAIN,
                 active_agents,
                 model_factory_func,
@@ -405,11 +381,7 @@ async def create_agents_in_dependency_order(
         if AgentType.EVALUATOR_OPTIMIZER.value in [agents_dict[name]["type"] for name in group]:
             evaluator_agents = await create_agents_by_type(
                 app_instance,
-                {
-                    name: agents_dict[name]
-                    for name in group
-                    if agents_dict[name]["type"] == AgentType.EVALUATOR_OPTIMIZER.value
-                },
+                {name: agents_dict[name] for name in group if agents_dict[name]["type"] == AgentType.EVALUATOR_OPTIMIZER.value},
                 AgentType.EVALUATOR_OPTIMIZER,
                 active_agents,
                 model_factory_func,
@@ -420,11 +392,7 @@ async def create_agents_in_dependency_order(
         if AgentType.ORCHESTRATOR.value in [agents_dict[name]["type"] for name in group]:
             orchestrator_agents = await create_agents_by_type(
                 app_instance,
-                {
-                    name: agents_dict[name]
-                    for name in group
-                    if agents_dict[name]["type"] == AgentType.ORCHESTRATOR.value
-                },
+                {name: agents_dict[name] for name in group if agents_dict[name]["type"] == AgentType.ORCHESTRATOR.value},
                 AgentType.ORCHESTRATOR,
                 active_agents,
                 model_factory_func,

@@ -20,15 +20,20 @@ mcp:
     # Filesystem server provides file operations with configurable access controls
     filesystem:
       command: npx
-      args: [
+      args:
+        [
           "-y",
           "@modelcontextprotocol/server-filesystem",
           ".",
-          "/home/samuel/Downloads", # ← change this path to your own folder
+          "/home/user/Downloads",
+          "/home/user/Downloads/java",
+          "/home/user/Documents",
+          "/home/user/Desktop",
+          "/tmp",
         ]
       env:
-        # Change this to match your own folder path
-        ALLOW_PATHS: "/home/samuel/Downloads"
+        # Allow access to common project locations and temp files
+        ALLOW_PATHS: "/home/user/Downloads:/home/user/Downloads/java:/home/user/Documents:/home/user/Documents/GitHub:/home/user/Desktop:/tmp:."
         ALLOW_OPERATIONS: "read,write,delete,move,copy,list"
 
     # Tavily AI search server (working package)
@@ -58,3 +63,12 @@ mcp:
     github:
       command: npx
       args: ["-y", "@modelcontextprotocol/server-github"]
+
+    # Spring Boot project generator (custom MCP server)
+    spring-boot-generator:
+      command: python3
+      args:
+        [
+          "/home/user/Documents/GitHub/europa-fastagent/mcp-spring-boot-generator/mcp_spring_boot_generator.py",
+        ]
+      env: {}

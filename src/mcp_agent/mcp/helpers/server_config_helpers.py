@@ -10,14 +10,12 @@ if TYPE_CHECKING:
 
 def get_server_config(ctx: ClientSession) -> Optional["MCPServerSettings"]:
     """Extract server config from context if available.
-    
+
     Type guard helper that safely accesses server_config with proper type checking.
     """
     # Import here to avoid circular import
     from mcp_agent.mcp.mcp_agent_client_session import MCPAgentClientSession
-    
-    if (hasattr(ctx, "session") and 
-        isinstance(ctx.session, MCPAgentClientSession) and
-        ctx.session.server_config):
+
+    if hasattr(ctx, "session") and isinstance(ctx.session, MCPAgentClientSession) and ctx.session.server_config:
         return ctx.session.server_config
     return None

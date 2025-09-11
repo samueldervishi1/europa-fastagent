@@ -201,9 +201,7 @@ class HTTPTransport(FilteredEventTransport):
     async def start(self) -> None:
         """Initialize HTTP session."""
         if not self._session:
-            self._session = aiohttp.ClientSession(
-                headers=self.headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
-            )
+            self._session = aiohttp.ClientSession(headers=self.headers, timeout=aiohttp.ClientTimeout(total=self.timeout))
 
     async def stop(self) -> None:
         """Close HTTP session and flush any remaining events."""
@@ -248,10 +246,7 @@ class HTTPTransport(FilteredEventTransport):
             async with self._session.post(self.endpoint, json=events_data) as response:
                 if response.status >= 400:
                     text = await response.text()
-                    print(
-                        f"Error sending log events to {self.endpoint}. "
-                        f"Status: {response.status}, Response: {text}"
-                    )
+                    print(f"Error sending log events to {self.endpoint}. Status: {response.status}, Response: {text}")
         except Exception as e:
             print(f"Error sending log events to {self.endpoint}: {e}")
         finally:
@@ -426,9 +421,7 @@ class AsyncEventBus:
                     for r in results:
                         if isinstance(r, Exception):
                             print(f"Error in listener: {r}")
-                            print(
-                                f"Stacktrace: {''.join(traceback.format_exception(type(r), r, r.__traceback__))}"
-                            )
+                            print(f"Stacktrace: {''.join(traceback.format_exception(type(r), r, r.__traceback__))}")
 
             except asyncio.CancelledError:
                 # If we have a current event, mark it done before breaking
@@ -459,9 +452,7 @@ class AsyncEventBus:
                 break
 
 
-def create_transport(
-    settings: LoggerSettings, event_filter: EventFilter | None = None
-) -> EventTransport:
+def create_transport(settings: LoggerSettings, event_filter: EventFilter | None = None) -> EventTransport:
     """Create event transport based on settings."""
     if settings.type == "none":
         return NoOpTransport(event_filter=event_filter)

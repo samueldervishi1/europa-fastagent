@@ -33,8 +33,7 @@ class AgentMCPServer:
         self.agent_app = agent_app
         self.mcp_server: FastMCP = FastMCP(
             name=server_name,
-            instructions=server_description
-            or f"This server provides access to {len(agent_app._agents)} agents",
+            instructions=server_description or f"This server provides access to {len(agent_app._agents)} agents",
         )
         # Shutdown coordination
         self._graceful_shutdown_event = asyncio.Event()
@@ -179,9 +178,7 @@ class AgentMCPServer:
                 # Minimal cleanup for stdio
                 asyncio.run(self._cleanup_stdio())
 
-    async def run_async(
-        self, transport: str = "http", host: str = "0.0.0.0", port: int = 8000
-    ) -> None:
+    async def run_async(self, transport: str = "http", host: str = "0.0.0.0", port: int = 8000) -> None:
         """Run the MCP server asynchronously with improved shutdown handling."""
         # Use different handling strategies based on transport type
         if transport in ["sse", "http"]:
@@ -288,9 +285,7 @@ class AgentMCPServer:
             force_shutdown_task = asyncio.create_task(self._force_shutdown_event.wait())
             timeout_task = asyncio.create_task(asyncio.sleep(self._shutdown_timeout))
 
-            done, pending = await asyncio.wait(
-                [force_shutdown_task, timeout_task], return_when=asyncio.FIRST_COMPLETED
-            )
+            done, pending = await asyncio.wait([force_shutdown_task, timeout_task], return_when=asyncio.FIRST_COMPLETED)
 
             # Cancel the remaining task
             for task in pending:
@@ -326,10 +321,7 @@ class AgentMCPServer:
             self._active_connections.discard(conn)
 
         # Access the SSE transport if it exists to close stream writers
-        if (
-            hasattr(self.mcp_server, "_sse_transport")
-            and self.mcp_server._sse_transport is not None
-        ):
+        if hasattr(self.mcp_server, "_sse_transport") and self.mcp_server._sse_transport is not None:
             sse = self.mcp_server._sse_transport
 
             # Close all read stream writers
@@ -357,10 +349,7 @@ class AgentMCPServer:
                         logger.error(f"Error closing SSE connection {session_id}: {e}")
 
         # If we have a ASGI lifespan hook, try to signal closure
-        if (
-            hasattr(self.mcp_server, "_lifespan_state")
-            and self.mcp_server._lifespan_state == "started"
-        ):
+        if hasattr(self.mcp_server, "_lifespan_state") and self.mcp_server._lifespan_state == "started":
             logger.debug("Attempting to signal ASGI lifespan shutdown")
             try:
                 if hasattr(self.mcp_server, "_on_shutdown"):
@@ -460,10 +449,7 @@ class AgentMCPServer:
         logger.info("Performing minimal cleanup before interrupt")
 
         # Only close SSE connection writers directly
-        if (
-            hasattr(self.mcp_server, "_sse_transport")
-            and self.mcp_server._sse_transport is not None
-        ):
+        if hasattr(self.mcp_server, "_sse_transport") and self.mcp_server._sse_transport is not None:
             sse = self.mcp_server._sse_transport
 
             # Close all read stream writers

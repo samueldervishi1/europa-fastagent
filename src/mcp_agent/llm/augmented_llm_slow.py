@@ -18,9 +18,7 @@ class SlowLLM(PassthroughLLM):
     or for debugging timing-related issues in parallel workflows.
     """
 
-    def __init__(
-        self, provider=Provider.FAST_AGENT, name: str = "Slow", **kwargs: dict[str, Any]
-    ) -> None:
+    def __init__(self, provider=Provider.FAST_AGENT, name: str = "Slow", **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, provider=provider, **kwargs)
 
     async def generate_str(

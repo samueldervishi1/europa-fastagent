@@ -72,21 +72,15 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
         # Set up reasoning-related attributes
         self._reasoning_effort = kwargs.get("reasoning_effort", None)
         if self.context and self.context.config and self.context.config.openai:
-            if self._reasoning_effort is None and hasattr(
-                self.context.config.openai, "reasoning_effort"
-            ):
+            if self._reasoning_effort is None and hasattr(self.context.config.openai, "reasoning_effort"):
                 self._reasoning_effort = self.context.config.openai.reasoning_effort
 
         # Determine if we're using a reasoning model
         # TODO -- move this to model capabilities, add o4.
         chosen_model = self.default_request_params.model if self.default_request_params else None
-        self._reasoning = chosen_model and (
-            chosen_model.startswith("o3") or chosen_model.startswith("o1")
-        )
+        self._reasoning = chosen_model and (chosen_model.startswith("o3") or chosen_model.startswith("o1"))
         if self._reasoning:
-            self.logger.info(
-                f"Using reasoning model '{chosen_model}' with '{self._reasoning_effort}' reasoning effort"
-            )
+            self.logger.info(f"Using reasoning model '{chosen_model}' with '{self._reasoning_effort}' reasoning effort")
 
     def _initialize_default_params(self, kwargs: dict) -> RequestParams:
         """Initialize OpenAI-specific default parameters"""
@@ -109,8 +103,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
         except AuthenticationError as e:
             raise ProviderKeyError(
                 "Invalid OpenAI API key",
-                "The configured OpenAI API key was rejected.\n"
-                "Please check that your API key is valid and not expired.",
+                "The configured OpenAI API key was rejected.\nPlease check that your API key is valid and not expired.",
             ) from e
 
     async def _openai_completion(
@@ -160,9 +153,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
 
             self._log_chat_progress(self.chat_turn(), model=self.default_request_params.model)
 
-            executor_result = await self.executor.execute(
-                self._openai_client().chat.completions.create, **arguments
-            )
+            executor_result = await self.executor.execute(self._openai_client().chat.completions.create, **arguments)
 
             response = executor_result[0]
 
@@ -174,8 +165,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
             if isinstance(response, AuthenticationError):
                 raise ProviderKeyError(
                     "Rejected OpenAI API key",
-                    "The configured OpenAI API key was rejected.\n"
-                    "Please check that your API key is valid and not expired.",
+                    "The configured OpenAI API key was rejected.\nPlease check that your API key is valid and not expired.",
                 ) from response
             elif isinstance(response, BaseException):
                 self.logger.error(f"Error: {response}")
@@ -199,9 +189,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
                 if message_text:
                     await self.show_assistant_message(
                         message_text,
-                        message.tool_calls[
-                            0
-                        ].function.name,  # TODO support displaying multiple tool calls
+                        message.tool_calls[0].function.name,  # TODO support displaying multiple tool calls
                     )
                 else:
                     await self.show_assistant_message(
@@ -224,8 +212,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
                         params=CallToolRequestParams(
                             name=tool_call.function.name,
                             arguments={}
-                            if not tool_call.function.arguments
-                            or tool_call.function.arguments.strip() == ""
+                            if not tool_call.function.arguments or tool_call.function.arguments.strip() == ""
                             else from_json(tool_call.function.arguments, allow_partial=True),
                         ),
                     )
@@ -236,9 +223,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
                     responses.extend(result.content)
                 messages.extend(OpenAIConverter.convert_function_results_to_openai(tool_results))
 
-                self.logger.debug(
-                    f"Iteration {i}: Tool call results: {str(tool_results) if tool_results else 'None'}"
-                )
+                self.logger.debug(f"Iteration {i}: Tool call results: {str(tool_results) if tool_results else 'None'}")
             elif choice.finish_reason == "length":
                 # We have reached the max tokens limit
                 self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'length'")
@@ -257,9 +242,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
                 break
             elif choice.finish_reason == "content_filter":
                 # The response was filtered by the content filter
-                self.logger.debug(
-                    f"Iteration {i}: Stopping because finish_reason is 'content_filter'"
-                )
+                self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'content_filter'")
                 break
             elif choice.finish_reason == "stop":
                 self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'stop'")
@@ -293,9 +276,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
 
         # Add all previous messages to history (or all messages if last is from assistant)
         # if the last message is a "user" inference is required
-        messages_to_add = (
-            multipart_messages[:-1] if last_message.role == "user" else multipart_messages
-        )
+        messages_to_add = multipart_messages[:-1] if last_message.role == "user" else multipart_messages
         converted = []
         for msg in messages_to_add:
             converted.append(OpenAIConverter.convert_to_openai(msg))
@@ -308,9 +289,7 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
 
         # For assistant messages: Return the last message (no completion needed)
         message_param: OpenAIMessage = OpenAIConverter.convert_to_openai(last_message)
-        responses: List[
-            TextContent | ImageContent | EmbeddedResource
-        ] = await self._openai_completion(
+        responses: List[TextContent | ImageContent | EmbeddedResource] = await self._openai_completion(
             message_param,
             request_params,
         )
@@ -319,14 +298,10 @@ class OpenAIAugmentedLLM(AugmentedLLM[ChatCompletionMessageParam, ChatCompletion
     async def pre_tool_call(self, tool_call_id: str | None, request: CallToolRequest):
         return request
 
-    async def post_tool_call(
-        self, tool_call_id: str | None, request: CallToolRequest, result: CallToolResult
-    ):
+    async def post_tool_call(self, tool_call_id: str | None, request: CallToolRequest, result: CallToolResult):
         return result
 
-    def _prepare_api_request(
-        self, messages, tools: List[ChatCompletionToolParam] | None, request_params: RequestParams
-    ) -> dict[str, str]:
+    def _prepare_api_request(self, messages, tools: List[ChatCompletionToolParam] | None, request_params: RequestParams) -> dict[str, str]:
         # Create base arguments dictionary
 
         # overriding model via request params not supported (intentional)

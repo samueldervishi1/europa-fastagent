@@ -52,32 +52,26 @@ def validate_workflow_references(agents: Dict[str, Dict[str, Any]]) -> None:
 
     for name, agent_data in agents.items():
         agent_type = agent_data["type"]  # This is a string from config
-        
+
         # Note: Compare string values from config with the Enum's string value
         if agent_type == AgentType.PARALLEL.value:
             # Check fan_in exists
             fan_in = agent_data["fan_in"]
             if fan_in and fan_in not in available_components:
-                raise AgentConfigError(
-                    f"Parallel workflow '{name}' references non-existent fan_in component: {fan_in}"
-                )
+                raise AgentConfigError(f"Parallel workflow '{name}' references non-existent fan_in component: {fan_in}")
 
             # Check fan_out agents exist
             fan_out = agent_data["fan_out"]
             missing = [a for a in fan_out if a not in available_components]
             if missing:
-                raise AgentConfigError(
-                    f"Parallel workflow '{name}' references non-existent fan_out components: {', '.join(missing)}"
-                )
+                raise AgentConfigError(f"Parallel workflow '{name}' references non-existent fan_out components: {', '.join(missing)}")
 
         elif agent_type == AgentType.ORCHESTRATOR.value:
             # Check all child agents exist and are properly configured
             child_agents = agent_data["child_agents"]
             missing = [a for a in child_agents if a not in available_components]
             if missing:
-                raise AgentConfigError(
-                    f"Orchestrator '{name}' references non-existent agents: {', '.join(missing)}"
-                )
+                raise AgentConfigError(f"Orchestrator '{name}' references non-existent agents: {', '.join(missing)}")
 
             # Validate child agents have required LLM configuration
             for agent_name in child_agents:
@@ -110,9 +104,7 @@ def validate_workflow_references(agents: Dict[str, Dict[str, Any]]) -> None:
             router_agents = agent_data["router_agents"]
             missing = [a for a in router_agents if a not in available_components]
             if missing:
-                raise AgentConfigError(
-                    f"Router '{name}' references non-existent agents: {', '.join(missing)}"
-                )
+                raise AgentConfigError(f"Router '{name}' references non-existent agents: {', '.join(missing)}")
 
         elif agent_type == AgentType.EVALUATOR_OPTIMIZER.value:
             # Check both evaluator and optimizer exist
@@ -124,18 +116,14 @@ def validate_workflow_references(agents: Dict[str, Dict[str, Any]]) -> None:
             if generator not in available_components:
                 missing.append(f"generator: {generator}")
             if missing:
-                raise AgentConfigError(
-                    f"Evaluator-Optimizer '{name}' references non-existent components: {', '.join(missing)}"
-                )
+                raise AgentConfigError(f"Evaluator-Optimizer '{name}' references non-existent components: {', '.join(missing)}")
 
         elif agent_type == AgentType.CHAIN.value:
             # Check that all agents in the sequence exist
             sequence = agent_data.get("sequence", agent_data.get("agents", []))
             missing = [a for a in sequence if a not in available_components]
             if missing:
-                raise AgentConfigError(
-                    f"Chain '{name}' references non-existent agents: {', '.join(missing)}"
-                )
+                raise AgentConfigError(f"Chain '{name}' references non-existent agents: {', '.join(missing)}")
 
 
 def get_dependencies(
@@ -200,9 +188,7 @@ def get_dependencies(
     return deps
 
 
-def get_dependencies_groups(
-    agents_dict: Dict[str, Dict[str, Any]], allow_cycles: bool = False
-) -> List[List[str]]:
+def get_dependencies_groups(agents_dict: Dict[str, Dict[str, Any]], allow_cycles: bool = False) -> List[List[str]]:
     """
     Get dependencies between agents and group them into dependency layers.
     Each layer can be initialized in parallel.
@@ -226,7 +212,7 @@ def get_dependencies_groups(
     # Build the dependency graph
     for name, agent_data in agents_dict.items():
         agent_type = agent_data["type"]  # This is a string from config
-        
+
         # Note: Compare string values from config with the Enum's string value
         if agent_type == AgentType.PARALLEL.value:
             # Parallel agents depend on their fan-out and fan-in agents

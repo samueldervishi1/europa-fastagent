@@ -73,7 +73,7 @@ class ServerRegistry:
         """
         if config is None:
             self.registry = self.load_registry_from_file(config_path)
-        elif config.mcp is not None and hasattr(config.mcp, 'servers') and config.mcp.servers is not None:
+        elif config.mcp is not None and hasattr(config.mcp, "servers") and config.mcp.servers is not None:
             # Ensure config.mcp exists, has a 'servers' attribute, and it's not None
             self.registry = config.mcp.servers
         else:
@@ -83,9 +83,7 @@ class ServerRegistry:
         self.init_hooks: Dict[str, InitHookCallable] = {}
         self.connection_manager = MCPConnectionManager(self)
 
-    def load_registry_from_file(
-        self, config_path: str | None = None
-    ) -> Dict[str, MCPServerSettings]:
+    def load_registry_from_file(self, config_path: str | None = None) -> Dict[str, MCPServerSettings]:
         """
         Load the YAML configuration file and validate it.
 
@@ -95,13 +93,13 @@ class ServerRegistry:
         Raises:
             ValueError: If the configuration is invalid.
         """
-        servers = {} 
+        servers = {}
 
         settings = get_settings(config_path)
-        
-        if settings.mcp is not None and hasattr(settings.mcp, 'servers') and settings.mcp.servers is not None:
+
+        if settings.mcp is not None and hasattr(settings.mcp, "servers") and settings.mcp.servers is not None:
             return settings.mcp.servers
-        
+
         return servers
 
     @asynccontextmanager
@@ -135,15 +133,11 @@ class ServerRegistry:
 
         config = self.registry[server_name]
 
-        read_timeout_seconds = (
-            timedelta(config.read_timeout_seconds) if config.read_timeout_seconds else None
-        )
+        read_timeout_seconds = timedelta(config.read_timeout_seconds) if config.read_timeout_seconds else None
 
         if config.transport == "stdio":
             if not config.command or not config.args:
-                raise ValueError(
-                    f"Command and args are required for stdio transport: {server_name}"
-                )
+                raise ValueError(f"Command and args are required for stdio transport: {server_name}")
 
             server_params = StdioServerParameters(
                 command=config.command,
@@ -153,9 +147,7 @@ class ServerRegistry:
             )
 
             # Create a stderr handler that logs to our application logger
-            async with _add_none_to_context(
-                stdio_client(server_params, errlog=get_stderr_handler(server_name))
-            ) as (
+            async with _add_none_to_context(stdio_client(server_params, errlog=get_stderr_handler(server_name))) as (
                 read_stream,
                 write_stream,
                 _,
@@ -264,17 +256,13 @@ class ServerRegistry:
 
         config = self.registry[server_name]
 
-        async with self.start_server(
-            server_name, client_session_factory=client_session_factory
-        ) as session:
+        async with self.start_server(server_name, client_session_factory=client_session_factory) as session:
             try:
                 logger.info(f"{server_name}: Initializing server...")
                 await session.initialize()
                 logger.info(f"{server_name}: Initialized.")
 
-                intialization_callback = (
-                    init_hook if init_hook is not None else self.init_hooks.get(server_name)
-                )
+                intialization_callback = init_hook if init_hook is not None else self.init_hooks.get(server_name)
 
                 if intialization_callback:
                     logger.info(f"{server_name}: Executing init hook")

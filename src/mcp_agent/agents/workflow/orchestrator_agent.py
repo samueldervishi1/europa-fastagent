@@ -142,9 +142,7 @@ class OrchestratorAgent(BaseAgent):
         # Try to parse the response into the specified model
         try:
             result_text = response.all_text()
-            prompt_message = PromptMessageMultipart(
-                role="user", content=[TextContent(type="text", text=result_text)]
-            )
+            prompt_message = PromptMessageMultipart(role="user", content=[TextContent(type="text", text=result_text)])
             assert self._llm
             return await self._llm.structured([prompt_message], model, request_params)
         except Exception as e:
@@ -226,9 +224,7 @@ class OrchestratorAgent(BaseAgent):
             for step in plan.steps:
                 # Check if we've hit the step limit
                 if total_steps_executed >= max_steps:
-                    self.logger.warning(
-                        f"Reached maximum step limit ({max_steps}) without completing objective"
-                    )
+                    self.logger.warning(f"Reached maximum step limit ({max_steps}) without completing objective")
                     plan_result.max_iterations_reached = True
                     break
 
@@ -265,20 +261,14 @@ class OrchestratorAgent(BaseAgent):
                 plan_result.is_complete = True
 
             # Use standard template
-            synthesis_prompt = SYNTHESIZE_PLAN_PROMPT_TEMPLATE.format(
-                plan_result=format_plan_result(plan_result)
-            )
+            synthesis_prompt = SYNTHESIZE_PLAN_PROMPT_TEMPLATE.format(plan_result=format_plan_result(plan_result))
 
         # Generate final synthesis
-        plan_result.result = await self._planner_generate_str(
-            synthesis_prompt, request_params.model_copy(update={"max_iterations": 1})
-        )
+        plan_result.result = await self._planner_generate_str(synthesis_prompt, request_params.model_copy(update={"max_iterations": 1}))
 
         return plan_result
 
-    async def _execute_step(
-        self, step: Step, previous_result: PlanResult, request_params: RequestParams
-    ) -> Any:
+    async def _execute_step(self, step: Step, previous_result: PlanResult, request_params: RequestParams) -> Any:
         """
         Execute a single step from the plan.
 
@@ -306,9 +296,7 @@ class OrchestratorAgent(BaseAgent):
             # Check agent exists
             agent = self.agents.get(task.agent)
             if not agent:
-                self.logger.error(
-                    f"No agent found matching '{task.agent}'. Available agents: {list(self.agents.keys())}"
-                )
+                self.logger.error(f"No agent found matching '{task.agent}'. Available agents: {list(self.agents.keys())}")
                 error_tasks.append(
                     (
                         task,
@@ -318,9 +306,7 @@ class OrchestratorAgent(BaseAgent):
                 continue
 
             # Prepare task prompt
-            task_description = TASK_PROMPT_TEMPLATE.format(
-                objective=previous_result.objective, task=task.description, context=context
-            )
+            task_description = TASK_PROMPT_TEMPLATE.format(objective=previous_result.objective, task=task.description, context=context)
 
             # Queue task for execution
             futures.append(
@@ -384,9 +370,7 @@ class OrchestratorAgent(BaseAgent):
         step_result.result = format_step_result_text(step_result)
         return step_result
 
-    async def _get_full_plan(
-        self, objective: str, plan_result: PlanResult, request_params: RequestParams
-    ) -> Optional[Plan]:
+    async def _get_full_plan(self, objective: str, plan_result: PlanResult, request_params: RequestParams) -> Optional[Plan]:
         """
         Generate a full plan with all steps.
 
@@ -432,18 +416,14 @@ class OrchestratorAgent(BaseAgent):
 
         # Get structured response from LLM
         try:
-            plan_msg = PromptMessageMultipart(
-                role="user", content=[TextContent(type="text", text=prompt)]
-            )
+            plan_msg = PromptMessageMultipart(role="user", content=[TextContent(type="text", text=prompt)])
             plan, _ = await self._llm.structured([plan_msg], Plan, request_params)
             return plan
         except Exception as e:
             self.logger.error(f"Failed to parse plan: {str(e)}")
             return None
 
-    async def _get_next_step(
-        self, objective: str, plan_result: PlanResult, request_params: RequestParams
-    ) -> Optional[NextStep]:
+    async def _get_next_step(self, objective: str, plan_result: PlanResult, request_params: RequestParams) -> Optional[NextStep]:
         """
         Generate just the next step for iterative planning.
 
@@ -456,9 +436,7 @@ class OrchestratorAgent(BaseAgent):
             Next step to execute, or None if parsing fails
         """
         # Format agent information
-        agents = "\n".join(
-            [self._format_agent_info(agent_name) for agent_name in self.agents.keys()]
-        )
+        agents = "\n".join([self._format_agent_info(agent_name) for agent_name in self.agents.keys()])
 
         # Determine plan status
         if plan_result.is_complete:
@@ -472,9 +450,7 @@ class OrchestratorAgent(BaseAgent):
         max_iterations = request_params.max_iterations
         current_iteration = len(plan_result.step_results)
         iterations_remaining = max_iterations - current_iteration
-        iterations_info = (
-            f"Planning Budget: {iterations_remaining} of {max_iterations} iterations remaining"
-        )
+        iterations_info = f"Planning Budget: {iterations_remaining} of {max_iterations} iterations remaining"
 
         # Format the planning prompt
         prompt = ITERATIVE_PLAN_PROMPT_TEMPLATE.format(
@@ -487,9 +463,7 @@ class OrchestratorAgent(BaseAgent):
 
         # Get structured response from LLM
         try:
-            plan_msg = PromptMessageMultipart(
-                role="user", content=[TextContent(type="text", text=prompt)]
-            )
+            plan_msg = PromptMessageMultipart(role="user", content=[TextContent(type="text", text=prompt)])
             next_step, _ = await self._llm.structured([plan_msg], NextStep, request_params)
             return next_step
         except Exception as e:
@@ -517,9 +491,7 @@ class OrchestratorAgent(BaseAgent):
         if invalid_agents:
             available_agents = ", ".join(self.agents.keys())
             invalid_list = ", ".join(invalid_agents)
-            self.logger.error(
-                f"Plan contains invalid agent names: {invalid_list}. Available agents: {available_agents}"
-            )
+            self.logger.error(f"Plan contains invalid agent names: {invalid_list}. Available agents: {available_agents}")
 
     def _format_agent_info(self, agent_name: str) -> str:
         """
@@ -554,9 +526,7 @@ class OrchestratorAgent(BaseAgent):
             String response from the LLM
         """
         # Create prompt message
-        prompt = PromptMessageMultipart(
-            role="user", content=[TextContent(type="text", text=message)]
-        )
+        prompt = PromptMessageMultipart(role="user", content=[TextContent(type="text", text=message)])
 
         # Get response from LLM
         response = await self._llm.generate([prompt], request_params)

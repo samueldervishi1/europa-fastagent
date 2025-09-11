@@ -102,9 +102,7 @@ def generate_server_name(url: str) -> str:
     return clean_hostname
 
 
-def parse_server_urls(
-    urls_param: str, auth_token: str = None
-) -> List[Tuple[str, Literal["http", "sse"], str, Dict[str, str] | None]]:
+def parse_server_urls(urls_param: str, auth_token: str = None) -> List[Tuple[str, Literal["http", "sse"], str, Dict[str, str] | None]]:
     """
     Parse a comma-separated list of URLs into server configurations.
 
@@ -133,10 +131,10 @@ def parse_server_urls(
     result = []
     for url in url_list:
         server_name, transport_type, parsed_url = parse_server_url(url)
-        
+
         # Apply HuggingFace authentication if appropriate
         final_headers = add_hf_auth_header(parsed_url, headers)
-        
+
         result.append((server_name, transport_type, parsed_url, final_headers))
 
     return result

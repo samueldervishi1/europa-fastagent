@@ -44,9 +44,7 @@ class AzureOpenAIAugmentedLLM(OpenAIAugmentedLLM):
 
         self.use_default_cred = getattr(azure_cfg, "use_default_azure_credential", False)
         default_request_params = getattr(self, "default_request_params", None)
-        self.deployment_name = getattr(default_request_params, "model", None) or getattr(
-            azure_cfg, "azure_deployment", None
-        )
+        self.deployment_name = getattr(default_request_params, "model", None) or getattr(azure_cfg, "azure_deployment", None)
         self.api_version = getattr(azure_cfg, "api_version", None) or DEFAULT_AZURE_API_VERSION
 
         if self.use_default_cred:
@@ -126,12 +124,10 @@ class AzureOpenAIAugmentedLLM(OpenAIAugmentedLLM):
             if self.use_default_cred:
                 raise ProviderKeyError(
                     "Invalid Azure AD credentials",
-                    "The configured Azure AD credentials were rejected.\n"
-                    "Please check your Azure identity setup.",
+                    "The configured Azure AD credentials were rejected.\nPlease check your Azure identity setup.",
                 ) from e
             else:
                 raise ProviderKeyError(
                     "Invalid Azure OpenAI API key",
-                    "The configured Azure OpenAI API key was rejected.\n"
-                    "Please check that your API key is valid and not expired.",
+                    "The configured Azure OpenAI API key was rejected.\nPlease check that your API key is valid and not expired.",
                 ) from e

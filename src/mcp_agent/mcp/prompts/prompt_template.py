@@ -127,9 +127,7 @@ class PromptTemplate:
         # Convert to delimited format
         delimited_content = multipart_messages_to_delimited_format(
             messages,
-            user_delimiter=next(
-                (k for k, v in delimiter_map.items() if v == "user"), USER_DELIMITER
-            ),
+            user_delimiter=next((k for k, v in delimiter_map.items() if v == "user"), USER_DELIMITER),
             assistant_delimiter=next(
                 (k for k, v in delimiter_map.items() if v == "assistant"),
                 ASSISTANT_DELIMITER,
@@ -165,9 +163,7 @@ class PromptTemplate:
         # Create a new list with substitutions applied to each section
         return [section.apply_substitutions(context) for section in self._parsed_content]
 
-    def apply_substitutions_to_multipart(
-        self, context: Dict[str, Any]
-    ) -> List[PromptMessageMultipart]:
+    def apply_substitutions_to_multipart(self, context: Dict[str, Any]) -> List[PromptMessageMultipart]:
         """
         Apply variable substitutions to the template and return PromptMessageMultipart objects.
 
@@ -421,9 +417,7 @@ class PromptTemplateLoader:
 
         # Extract resource paths from all sections that come after RESOURCE delimiters
         resource_paths = []
-        resource_delimiter = next(
-            (k for k, v in self.delimiter_map.items() if v == "resource"), RESOURCE_DELIMITER
-        )
+        resource_delimiter = next((k for k, v in self.delimiter_map.items() if v == "resource"), RESOURCE_DELIMITER)
         for i, line in enumerate(lines):
             if line.strip() == resource_delimiter:
                 if i + 1 < len(lines) and lines[i + 1].strip():

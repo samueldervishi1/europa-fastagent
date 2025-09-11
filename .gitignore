@@ -27,6 +27,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .claude/
+logs/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -208,3 +209,4 @@ section_update_example.py
 markdown_update_service.py
 modular_performance_generator.py
 gcp-oauth.keys.json
+logs/errors.jsonl

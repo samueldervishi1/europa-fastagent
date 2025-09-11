@@ -145,9 +145,7 @@ class JSONSerializer:
             # Handle objects with attributes
             if inspect.getmembers(obj):
                 return {
-                    name: self._redact_sensitive_value(value)
-                    if self._is_sensitive_key(name)
-                    else self._serialize_object(value, depth + 1)
+                    name: self._redact_sensitive_value(value) if self._is_sensitive_key(name) else self._serialize_object(value, depth + 1)
                     for name, value in inspect.getmembers(obj)
                     if not name.startswith("_") and not inspect.ismethod(value)
                 }

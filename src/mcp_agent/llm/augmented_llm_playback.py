@@ -44,9 +44,7 @@ class PlaybackLLM(PassthroughLLM):
             return message
 
         self._overage += 1
-        return Prompt.assistant(
-            f"MESSAGES EXHAUSTED (list size {len(self._messages)}) ({self._overage} overage)"
-        )
+        return Prompt.assistant(f"MESSAGES EXHAUSTED (list size {len(self._messages)}) ({self._overage} overage)")
 
     async def generate(
         self,
@@ -79,9 +77,7 @@ class PlaybackLLM(PassthroughLLM):
             return Prompt.assistant("HISTORY LOADED")
 
         response = self._get_next_assistant_message()
-        await self.show_assistant_message(
-            message_text=MessageContent.get_first_text(response), title="ASSISTANT/PLAYBACK"
-        )
+        await self.show_assistant_message(message_text=MessageContent.get_first_text(response), title="ASSISTANT/PLAYBACK")
 
         return response
 

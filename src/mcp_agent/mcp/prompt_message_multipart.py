@@ -52,9 +52,7 @@ class PromptMessageMultipart(BaseModel):
 
     def from_multipart(self) -> List[PromptMessage]:
         """Convert this PromptMessageMultipart to a sequence of standard PromptMessages."""
-        return [
-            PromptMessage(role=self.role, content=content_part) for content_part in self.content
-        ]
+        return [PromptMessage(role=self.role, content=content_part) for content_part in self.content]
 
     def first_text(self) -> str:
         """
@@ -128,9 +126,7 @@ class PromptMessageMultipart(BaseModel):
         return cls.to_multipart(result.messages)
 
     @classmethod
-    def from_get_prompt_result(
-        cls, result: Optional[GetPromptResult]
-    ) -> List["PromptMessageMultipart"]:
+    def from_get_prompt_result(cls, result: Optional[GetPromptResult]) -> List["PromptMessageMultipart"]:
         """
         Convert a GetPromptResult to PromptMessageMultipart objects with error handling.
         This method safely handles None values and empty results.

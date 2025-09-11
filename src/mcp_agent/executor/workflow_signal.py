@@ -145,9 +145,7 @@ class ConsoleSignalHandler(SignalHandler[str]):
         loop = asyncio.get_event_loop()
         if timeout_seconds is not None:
             try:
-                value = await asyncio.wait_for(
-                    loop.run_in_executor(None, input, "Enter value: "), timeout_seconds
-                )
+                value = await asyncio.wait_for(loop.run_in_executor(None, input, "Enter value: "), timeout_seconds)
             except asyncio.TimeoutError:
                 print("\nTimeout waiting for input")
                 raise
@@ -221,9 +219,7 @@ class AsyncioSignalHandler(BaseSignalHandler[SignalValueT]):
                 # Remove from pending signals
                 if signal.name in self._pending_signals:
                     self._pending_signals[signal.name] = [
-                        ps
-                        for ps in self._pending_signals[signal.name]
-                        if ps.registration.unique_name != unique_name
+                        ps for ps in self._pending_signals[signal.name] if ps.registration.unique_name != unique_name
                     ]
                     if not self._pending_signals[signal.name]:
                         del self._pending_signals[signal.name]

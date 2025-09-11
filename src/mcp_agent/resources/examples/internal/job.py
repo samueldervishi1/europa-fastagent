@@ -74,9 +74,7 @@ async def main() -> None:
 
         for role in roles:
             # Generate and refine job description
-            description = await agent.job_description_writer(
-                f"Create job description for {role} role"
-            )
+            description = await agent.job_description_writer(f"Create job description for {role} role")
             await agent.file_handler(f"Save this job description: {description}")
 
 

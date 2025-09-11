@@ -98,11 +98,7 @@ def check_api_keys(secrets_summary: dict, config_summary: dict) -> dict:
     """
     import os
 
-    results = {
-        provider.value: {"env": "", "config": ""}
-        for provider in Provider
-        if provider != Provider.FAST_AGENT
-    }
+    results = {provider.value: {"env": "", "config": ""} for provider in Provider if provider != Provider.FAST_AGENT}
 
     # Get secrets if available
     secrets = secrets_summary.get("secrets", {})
@@ -166,7 +162,7 @@ def check_api_keys(secrets_summary: dict, config_summary: dict) -> dict:
 def get_fastagent_version() -> str:
     """Get the installed version of FastAgent."""
     try:
-        return version("tauricus")
+        return version("europa")
     except:  # noqa: E722
         return "unknown"
 
@@ -228,10 +224,11 @@ def get_config_summary(config_path: Optional[Path]) -> dict:
                 if "url" in server_config:
                     url = server_config.get("url", "")
                     server_info["url"] = url
-                    
+
                     # Use URL path to determine transport type
                     try:
                         from .url_parser import parse_server_url
+
                         _, transport_type, _ = parse_server_url(url)
                         server_info["transport"] = transport_type.upper()
                     except Exception:
@@ -323,9 +320,7 @@ def show_check_summary() -> None:
         )
     else:  # parsed successfully
         files_table.add_row("Config File", f"[green]Found[/green] ({config_path})")
-        files_table.add_row(
-            "Default Model", config_summary.get("default_model", "haiku (system default)")
-        )
+        files_table.add_row("Default Model", config_summary.get("default_model", "haiku (system default)"))
 
         # Add logger settings if available
         logger = config_summary.get("logger", {})
@@ -416,29 +411,17 @@ def show_check_summary() -> None:
         console.print("\n[bold]Config File Issues:[/bold]")
         console.print("Fix the YAML syntax errors in your configuration files")
 
-    if all(
-        not api_keys[provider]["env"] and not api_keys[provider]["config"] for provider in api_keys
-    ):
-        console.print(
-            "\n[yellow]No API keys configured. Set up API keys to use LLM services:[/yellow]"
-        )
+    if all(not api_keys[provider]["env"] and not api_keys[provider]["config"] for provider in api_keys):
+        console.print("\n[yellow]No API keys configured. Set up API keys to use LLM services:[/yellow]")
         console.print("1. Add keys to fastagent.secrets.yaml")
-        env_vars = ", ".join(
-            [
-                ProviderKeyManager.get_env_key_name(p.value)
-                for p in Provider
-                if p != Provider.FAST_AGENT
-            ]
-        )
+        env_vars = ", ".join([ProviderKeyManager.get_env_key_name(p.value) for p in Provider if p != Provider.FAST_AGENT])
         console.print(f"2. Or set environment variables ({env_vars})")
 
 
 @app.command()
 def show(
     path: Optional[str] = typer.Argument(None, help="Path to configuration file to display"),
-    secrets: bool = typer.Option(
-        False, "--secrets", "-s", help="Show secrets file instead of config"
-    ),
+    secrets: bool = typer.Option(False, "--secrets", "-s", help="Show secrets file instead of config"),
 ) -> None:
     """Display the configuration file content or search for it."""
     file_type = "secrets" if secrets else "config"
@@ -446,17 +429,13 @@ def show(
     if path:
         config_path = Path(path).resolve()
         if not config_path.exists():
-            console.print(
-                f"[red]Error:[/red] {file_type.capitalize()} file not found at {config_path}"
-            )
+            console.print(f"[red]Error:[/red] {file_type.capitalize()} file not found at {config_path}")
             raise typer.Exit(1)
     else:
         config_files = find_config_files(Path.cwd())
         config_path = config_files[file_type]
         if not config_path:
-            console.print(
-                f"[yellow]No {file_type} file found in current directory or parents[/yellow]"
-            )
+            console.print(f"[yellow]No {file_type} file found in current directory or parents[/yellow]")
             console.print("Run [cyan]fast-agent setup[/cyan] to create configuration files")
             raise typer.Exit(1)
 
@@ -474,9 +453,7 @@ def show(
         if parsed is None:
             console.print("[yellow]Warning: File is empty or contains only comments[/yellow]\n")
         else:
-            console.print(
-                f"[green]Successfully parsed {len(parsed) if isinstance(parsed, dict) else 0} root keys[/green]\n"
-            )
+            console.print(f"[green]Successfully parsed {len(parsed) if isinstance(parsed, dict) else 0} root keys[/green]\n")
 
         # Print the content
         console.print(content)

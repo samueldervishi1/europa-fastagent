@@ -40,9 +40,7 @@ class TensorZeroConverter:
 
                 # Use the provided mime_type if supported, otherwise default to png
                 if mime_type not in supported_mime_types:
-                    _logger.warning(
-                        f"Unsupported mimeType '{mime_type}' for T0 base64 image, defaulting to image/png."
-                    )
+                    _logger.warning(f"Unsupported mimeType '{mime_type}' for T0 base64 image, defaulting to image/png.")
                     mime_type = "image/png"
 
                 return {
@@ -52,16 +50,12 @@ class TensorZeroConverter:
                 }
             else:
                 # Log cases where it's an ImageContent but doesn't fit Base64 criteria
-                _logger.warning(
-                    f"Skipping ImageContent: Missing required base64 fields (mimeType/data), or mimeType is empty: {part}"
-                )
+                _logger.warning(f"Skipping ImageContent: Missing required base64 fields (mimeType/data), or mimeType is empty: {part}")
 
         elif isinstance(part, EmbeddedResource):
             _logger.warning(f"Skipping EmbeddedResource, T0 conversion not implemented: {part}")
         else:
-            _logger.error(
-                f"Unsupported content part type for T0 conversion: {type(part)}"
-            )  # Changed to error
+            _logger.error(f"Unsupported content part type for T0 conversion: {type(part)}")  # Changed to error
 
         return None  # Return None if no block was successfully created
 
@@ -115,9 +109,7 @@ class TensorZeroConverter:
                 except AttributeError:
                     pass
             else:
-                _logger.warning(
-                    f"Could not find id/name temp attributes for CallToolResult: {result}"
-                )
+                _logger.warning(f"Could not find id/name temp attributes for CallToolResult: {result}")
 
         if not t0_tool_result_blocks:
             return None
@@ -173,9 +165,7 @@ class TensorZeroConverter:
                     except AttributeError:
                         pass
                 else:
-                    _logger.warning(
-                        f"Found embedded CallToolResult without required temp attributes: {part}"
-                    )
+                    _logger.warning(f"Found embedded CallToolResult without required temp attributes: {part}")
             # Note: The _convert_content_part handles logging for other skipped/unsupported types
 
         if not t0_content_blocks:
@@ -183,9 +173,7 @@ class TensorZeroConverter:
 
         # Determine role - logic remains the same
         valid_role = msg.role if msg.role in ["user", "assistant"] else "user"
-        if contains_tool_result and all(
-            block.get("type") == "tool_result" for block in t0_content_blocks
-        ):
+        if contains_tool_result and all(block.get("type") == "tool_result" for block in t0_content_blocks):
             final_role = "user"
             if valid_role != final_role:
                 _logger.debug(f"Overriding role to '{final_role}' for tool result message.")

@@ -89,13 +89,7 @@ def copy_example_files(example_type: str, target_dir: Path, force: bool = False)
         # First try to find examples in the package resources
         if example_type == "state-transfer":
             # The state-transfer example is in the mcp subdirectory
-            source_dir = (
-                files("mcp_agent")
-                .joinpath("resources")
-                .joinpath("examples")
-                .joinpath("mcp")
-                .joinpath("state-transfer")
-            )
+            source_dir = files("mcp_agent").joinpath("resources").joinpath("examples").joinpath("mcp").joinpath("state-transfer")
         else:
             # Other examples are at the top level of examples
             source_dir = (
@@ -107,34 +101,22 @@ def copy_example_files(example_type: str, target_dir: Path, force: bool = False)
 
         # Check if we found a valid directory
         if not source_dir.is_dir():
-            console.print(
-                f"[yellow]Resource directory not found: {source_dir}. Falling back to development mode.[/yellow]"
-            )
+            console.print(f"[yellow]Resource directory not found: {source_dir}. Falling back to development mode.[/yellow]")
             # Fall back to the top-level directory for development mode
             package_dir = Path(__file__).parent.parent.parent.parent.parent
             if example_type == "state-transfer":
                 source_dir = package_dir / "examples" / "mcp" / "state-transfer"
             else:
-                source_dir = (
-                    package_dir
-                    / "examples"
-                    / ("workflows" if example_type == "workflow" else f"{example_type}")
-                )
+                source_dir = package_dir / "examples" / ("workflows" if example_type == "workflow" else f"{example_type}")
             console.print(f"[blue]Using development directory: {source_dir}[/blue]")
     except (ImportError, ModuleNotFoundError, ValueError) as e:
-        console.print(
-            f"[yellow]Error accessing resources: {e}. Falling back to development mode.[/yellow]"
-        )
+        console.print(f"[yellow]Error accessing resources: {e}. Falling back to development mode.[/yellow]")
         # Fall back to the top-level directory if the resource finding fails
         package_dir = Path(__file__).parent.parent.parent.parent.parent
         if example_type == "state-transfer":
             source_dir = package_dir / "examples" / "mcp" / "state-transfer"
         else:
-            source_dir = (
-                package_dir
-                / "examples"
-                / ("workflows" if example_type == "workflow" else f"{example_type}")
-            )
+            source_dir = package_dir / "examples" / ("workflows" if example_type == "workflow" else f"{example_type}")
 
     if not source_dir.exists():
         console.print(f"[red]Error: Source directory not found: {source_dir}[/red]")
@@ -180,9 +162,7 @@ def copy_example_files(example_type: str, target_dir: Path, force: bool = False)
                     continue
 
                 if target.exists() and not force:
-                    console.print(
-                        f"[yellow]Skipping[/yellow] mount-point/{filename} (already exists)"
-                    )
+                    console.print(f"[yellow]Skipping[/yellow] mount-point/{filename} (already exists)")
                     continue
 
                 shutil.copy2(source, target)
@@ -209,9 +189,7 @@ def show_overview() -> None:
     for name, info in EXAMPLE_TYPES.items():
         files_list = "\n".join(f"• {f}" for f in info["files"])
         if "mount_point_files" in info:
-            files_list += "\n[blue]mount-point:[/blue]\n" + "\n".join(
-                f"• {f}" for f in info["mount_point_files"]
-            )
+            files_list += "\n[blue]mount-point:[/blue]\n" + "\n".join(f"• {f}" for f in info["mount_point_files"])
         table.add_row(f"[green]{name}[/green]", info["description"], files_list)
 
     console.print(table)
@@ -323,23 +301,17 @@ def _show_completion_message(example_type: str, created: list[str]) -> None:
             console.print("   - evaluator.py: Add evaluation capabilities")
             console.print("   - human_input.py: Incorporate human feedback")
             console.print("3. Run an example with: uv run <example>.py")
-            console.print(
-                "4. Try a different model with --model=<model>, or update the agent config"
-            )
+            console.print("4. Try a different model with --model=<model>, or update the agent config")
 
         elif example_type == "researcher":
-            console.print(
-                "1. Set up the Brave MCP Server (get an API key from https://brave.com/search/api/)"
-            )
+            console.print("1. Set up the Brave MCP Server (get an API key from https://brave.com/search/api/)")
             console.print("2. Try `uv run researcher.py` for the basic version")
             console.print("3. Try `uv run researcher-eval.py` for the eval/optimize version")
         elif example_type == "data-analysis":
             console.print("1. Run uv `analysis.py` to perform data analysis and visualization")
             console.print("2. The dataset is available in the mount-point directory:")
             console.print("   - mount-point/WA_Fn-UseC_-HR-Employee-Attrition.csv")
-            console.print(
-                "On Windows platforms, please edit the fastagent.config.yaml and adjust the volume mount point."
-            )
+            console.print("On Windows platforms, please edit the fastagent.config.yaml and adjust the volume mount point.")
         elif example_type == "state-transfer":
             console.print("Check https://fast-agent.ai for quick start walkthroughs")
     else:

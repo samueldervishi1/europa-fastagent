@@ -115,9 +115,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
         instruction: str | None = None,
         name: str | None = None,
         request_params: RequestParams | None = None,
-        type_converter: Type[
-            ProviderFormatConverter[MessageParamT, MessageT]
-        ] = BasicFormatConverter,
+        type_converter: Type[ProviderFormatConverter[MessageParamT, MessageT]] = BasicFormatConverter,
         context: Optional["Context"] = None,
         model: Optional[str] = None,
         **kwargs: dict[str, Any],
@@ -164,9 +162,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
 
         # Merge with provided params if any
         if self._init_request_params:
-            self.default_request_params = self._merge_request_params(
-                self.default_request_params, self._init_request_params
-            )
+            self.default_request_params = self._merge_request_params(self.default_request_params, self._init_request_params)
 
         self.type_converter = type_converter
         self.verb = kwargs.get("verb")
@@ -198,20 +194,14 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
 
         if multipart_messages[-1].first_text().startswith("***SAVE_HISTORY"):
             parts: list[str] = multipart_messages[-1].first_text().split(" ", 1)
-            filename: str = (
-                parts[1].strip() if len(parts) > 1 else f"{self.name or 'assistant'}_prompts.txt"
-            )
+            filename: str = parts[1].strip() if len(parts) > 1 else f"{self.name or 'assistant'}_prompts.txt"
             await self._save_history(filename)
-            self.show_user_message(
-                f"History saved to {filename}", model=self.default_request_params.model, chat_turn=0
-            )
+            self.show_user_message(f"History saved to {filename}", model=self.default_request_params.model, chat_turn=0)
             return Prompt.assistant(f"History saved to {filename}")
 
         self._precall(multipart_messages)
 
-        assistant_response: PromptMessageMultipart = await self._apply_prompt_provider_specific(
-            multipart_messages, request_params
-        )
+        assistant_response: PromptMessageMultipart = await self._apply_prompt_provider_specific(multipart_messages, request_params)
 
         # add generic error and termination reason handling/rollback
         self._message_history.append(assistant_response)
@@ -247,9 +237,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
         """Return a structured response from the LLM using the provided messages."""
 
         self._precall(multipart_messages)
-        result, assistant_response = await self._apply_prompt_provider_specific_structured(
-            multipart_messages, model, request_params
-        )
+        result, assistant_response = await self._apply_prompt_provider_specific_structured(multipart_messages, model, request_params)
 
         self._message_history.append(assistant_response)
         return result, assistant_response
@@ -308,9 +296,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
             if schema is not NotGiven:
                 request_params.response_format = schema
 
-        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(
-            multipart_messages, request_params
-        )
+        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(multipart_messages, request_params)
         return self._structured_from_multipart(result, model)
 
     def _structured_from_multipart(
@@ -376,9 +362,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
 
         return arguments
 
-    def _merge_request_params(
-        self, default_params: RequestParams, provided_params: RequestParams
-    ) -> RequestParams:
+    def _merge_request_params(self, default_params: RequestParams, provided_params: RequestParams) -> RequestParams:
         """Merge default and provided request parameters"""
 
         merged = deep_merge(
@@ -408,9 +392,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
         return self.default_request_params.model_copy()
 
     @classmethod
-    def convert_message_to_message_param(
-        cls, message: MessageT, **kwargs: dict[str, Any]
-    ) -> MessageParamT:
+    def convert_message_to_message_param(cls, message: MessageT, **kwargs: dict[str, Any]) -> MessageParamT:
         """Convert a response object to an input parameter object to allow LLM calls to be chained."""
         # Many LLM implementations will allow the same type for input and output messages
         return cast("MessageParamT", message)
@@ -448,15 +430,11 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
         """Display a user message in a formatted panel."""
         self.display.show_user_message(message, model, chat_turn, name=self.name)
 
-    async def pre_tool_call(
-        self, tool_call_id: str | None, request: CallToolRequest
-    ) -> CallToolRequest | bool:
+    async def pre_tool_call(self, tool_call_id: str | None, request: CallToolRequest) -> CallToolRequest | bool:
         """Called before a tool is executed. Return False to prevent execution."""
         return request
 
-    async def post_tool_call(
-        self, tool_call_id: str | None, request: CallToolRequest, result: CallToolResult
-    ) -> CallToolResult:
+    async def post_tool_call(self, tool_call_id: str | None, request: CallToolRequest, result: CallToolResult) -> CallToolResult:
         """Called after a tool execution. Can modify the result before it's returned."""
         return result
 
@@ -491,9 +469,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
             tool_args = request.params.arguments
             result = await self.aggregator.call_tool(tool_name, tool_args)
 
-            postprocess = await self.post_tool_call(
-                tool_call_id=tool_call_id, request=request, result=result
-            )
+            postprocess = await self.post_tool_call(tool_call_id=tool_call_id, request=request, result=result)
 
             if isinstance(postprocess, CallToolResult):
                 result = postprocess
@@ -512,9 +488,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
                 ],
             )
 
-    def _log_chat_progress(
-        self, chat_turn: Optional[int] = None, model: Optional[str] = None
-    ) -> None:
+    def _log_chat_progress(self, chat_turn: Optional[int] = None, model: Optional[str] = None) -> None:
         """Log a chat progress event"""
         # Determine action type based on verb
         if hasattr(self, "verb") and self.verb:
@@ -607,9 +581,7 @@ class AugmentedLLM(ContextDependent, AugmentedLLMProtocol, Generic[MessageParamT
         multipart_messages = PromptMessageMultipart.parse_get_prompt_result(prompt_result)
 
         # Delegate to the provider-specific implementation
-        result = await self._apply_prompt_provider_specific(
-            multipart_messages, None, is_template=True
-        )
+        result = await self._apply_prompt_provider_specific(multipart_messages, None, is_template=True)
         return result.first_text()
 
     async def _save_history(self, filename: str) -> None:

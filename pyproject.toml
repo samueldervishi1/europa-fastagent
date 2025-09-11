@@ -1,7 +1,7 @@
 [project]
-name = "tauricus"
+name = "europa"
 version = "0.0.20"
-description = "Tauricus - AI coordinator powered by Google Gemini with MCP integration"
+description = "Europa - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -116,7 +116,7 @@ dev = [
 ]
 
 [project.scripts]
-tauricus = "mcp_agent.cli.__main__:app"
+europa = "mcp_agent.cli.__main__:app"
 prompt-server = "mcp_agent.mcp.prompts.__main__:main"
 
 [tool.setuptools.package-data]

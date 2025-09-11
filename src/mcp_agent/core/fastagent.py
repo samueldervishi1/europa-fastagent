@@ -111,9 +111,7 @@ class FastAgent:
                 "--message",
                 help="Message to send to the specified agent",
             )
-            parser.add_argument(
-                "-p", "--prompt-file", help="Path to a prompt file to use (either text or JSON)"
-            )
+            parser.add_argument("-p", "--prompt-file", help="Path to a prompt file to use (either text or JSON)")
             parser.add_argument(
                 "--quiet",
                 action="store_true",
@@ -162,10 +160,10 @@ class FastAgent:
             # Handle version flag
             if self.args.version:
                 try:
-                    app_version = get_version("tauricus")
+                    app_version = get_version("europa")
                 except:  # noqa: E722
                     app_version = "unknown"
-                print(f"tauricus v{app_version}")
+                print(f"europa v{app_version}")
                 sys.exit(0)
         # --- End of wrapped logic ---
 
@@ -240,19 +238,13 @@ class FastAgent:
         # Handle quiet mode and CLI model override safely
         # Define these *before* they are used, checking if self.args exists and has the attributes
         quiet_mode = hasattr(self.args, "quiet") and self.args.quiet
-        cli_model_override = (
-            self.args.model if hasattr(self.args, "model") and self.args.model else None
-        )  # Define cli_model_override here
+        cli_model_override = self.args.model if hasattr(self.args, "model") and self.args.model else None  # Define cli_model_override here
         tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span(self.name):
             try:
                 async with self.app.run():
                     # Apply quiet mode if requested
-                    if (
-                        quiet_mode
-                        and hasattr(self.app.context, "config")
-                        and hasattr(self.app.context.config, "logger")
-                    ):
+                    if quiet_mode and hasattr(self.app.context, "config") and hasattr(self.app.context.config, "logger"):
                         # Update our app's config directly
                         self.app.context.config.logger.progress_display = False
                         self.app.context.config.logger.show_chat = False
@@ -265,9 +257,7 @@ class FastAgent:
 
                     # Pre-flight validation
                     if 0 == len(self.agents):
-                        raise AgentConfigError(
-                            "No agents defined. Please define at least one agent."
-                        )
+                        raise AgentConfigError("No agents defined. Please define at least one agent.")
                     validate_server_references(self.context, self.agents)
                     validate_workflow_references(self.agents)
 
@@ -339,9 +329,7 @@ class FastAgent:
 
                         if agent_name not in active_agents:
                             available_agents = ", ".join(active_agents.keys())
-                            print(
-                                f"\n\nError: Agent '{agent_name}' not found. Available agents: {available_agents}"
-                            )
+                            print(f"\n\nError: Agent '{agent_name}' not found. Available agents: {available_agents}")
                             raise SystemExit(1)
 
                         try:
@@ -361,14 +349,10 @@ class FastAgent:
 
                     if hasattr(self.args, "prompt_file") and self.args.prompt_file:
                         agent_name = self.args.agent
-                        prompt: List[PromptMessageMultipart] = load_prompt_multipart(
-                            Path(self.args.prompt_file)
-                        )
+                        prompt: List[PromptMessageMultipart] = load_prompt_multipart(Path(self.args.prompt_file))
                         if agent_name not in active_agents:
                             available_agents = ", ".join(active_agents.keys())
-                            print(
-                                f"\n\nError: Agent '{agent_name}' not found. Available agents: {available_agents}"
-                            )
+                            print(f"\n\nError: Agent '{agent_name}' not found. Available agents: {available_agents}")
                             raise SystemExit(1)
 
                         try:
@@ -504,9 +488,7 @@ class FastAgent:
         self.args.transport = transport
         self.args.host = host
         self.args.port = port
-        self.args.quiet = (
-            original_args.quiet if original_args and hasattr(original_args, "quiet") else False
-        )
+        self.args.quiet = original_args.quiet if original_args and hasattr(original_args, "quiet") else False
         self.args.model = None
         if hasattr(original_args, "model"):
             self.args.model = original_args.model

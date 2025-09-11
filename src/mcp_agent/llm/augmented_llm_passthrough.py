@@ -26,9 +26,7 @@ class PassthroughLLM(AugmentedLLM):
     parallel workflow where no fan-in aggregation is needed.
     """
 
-    def __init__(
-        self, provider=Provider.FAST_AGENT, name: str = "Passthrough", **kwargs: dict[str, Any]
-    ) -> None:
+    def __init__(self, provider=Provider.FAST_AGENT, name: str = "Passthrough", **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, provider=provider, **kwargs)
         self.logger = get_logger(__name__)
         self._messages = [PromptMessage]
@@ -149,9 +147,7 @@ class PassthroughLLM(AugmentedLLM):
             return result
 
         if last_message.first_text().startswith(FIXED_RESPONSE_INDICATOR):
-            self._fixed_response = (
-                last_message.first_text().split(FIXED_RESPONSE_INDICATOR, 1)[1].strip()
-            )
+            self._fixed_response = last_message.first_text().split(FIXED_RESPONSE_INDICATOR, 1)[1].strip()
 
         if self._fixed_response:
             await self.show_assistant_message(self._fixed_response)

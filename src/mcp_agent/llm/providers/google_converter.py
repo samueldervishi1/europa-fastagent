@@ -48,27 +48,18 @@ class GoogleConverter:
             if key in unsupported_keys:
                 continue  # Skip this key
 
-            if (
-                key == "format"
-                and schema.get("type") == "string"
-                and value not in supported_string_formats
-            ):
+            if key == "format" and schema.get("type") == "string" and value not in supported_string_formats:
                 continue  # Remove unsupported string formats
 
             if isinstance(value, dict):
                 cleaned_schema[key] = self._clean_schema_for_google(value)
             elif isinstance(value, list):
-                cleaned_schema[key] = [
-                    self._clean_schema_for_google(item) if isinstance(item, dict) else item
-                    for item in value
-                ]
+                cleaned_schema[key] = [self._clean_schema_for_google(item) if isinstance(item, dict) else item for item in value]
             else:
                 cleaned_schema[key] = value
         return cleaned_schema
 
-    def convert_to_google_content(
-        self, messages: List[PromptMessageMultipart]
-    ) -> List[types.Content]:
+    def convert_to_google_content(self, messages: List[PromptMessageMultipart]) -> List[types.Content]:
         """
         Converts a list of fast-agent PromptMessageMultipart to google.genai types.Content.
         Handles different roles and content types (text, images, etc.).
@@ -82,9 +73,7 @@ class GoogleConverter:
                 elif is_image_content(part_content):
                     assert isinstance(part_content, ImageContent)
                     image_bytes = base64.b64decode(get_image_data(part_content) or "")
-                    parts.append(
-                        types.Part.from_bytes(mime_type=part_content.mimeType, data=image_bytes)
-                    )
+                    parts.append(types.Part.from_bytes(mime_type=part_content.mimeType, data=image_bytes))
                 elif is_resource_content(part_content):
                     assert isinstance(part_content, EmbeddedResource)
                     if (
@@ -116,28 +105,12 @@ class GoogleConverter:
                             parts.append(types.Part.from_text(text=resource_text))
                         else:
                             # Fallback for other binary types or types without direct text
-                            uri_str = (
-                                part_content.resource.uri
-                                if hasattr(part_content.resource, "uri")
-                                else "unknown_uri"
-                            )
-                            mime_str = (
-                                part_content.resource.mimeType
-                                if hasattr(part_content.resource, "mimeType")
-                                else "unknown_mime"
-                            )
-                            parts.append(
-                                types.Part.from_text(
-                                    text=f"[Resource: {uri_str}, MIME: {mime_str}]"
-                                )
-                            )
+                            uri_str = part_content.resource.uri if hasattr(part_content.resource, "uri") else "unknown_uri"
+                            mime_str = part_content.resource.mimeType if hasattr(part_content.resource, "mimeType") else "unknown_mime"
+                            parts.append(types.Part.from_text(text=f"[Resource: {uri_str}, MIME: {mime_str}]"))
 
             if parts:
-                google_role = (
-                    "user"
-                    if message.role == "user"
-                    else ("model" if message.role == "assistant" else "tool")
-                )
+                google_role = "user" if message.role == "user" else ("model" if message.role == "assistant" else "tool")
                 google_contents.append(types.Content(role=google_role, parts=parts))
         return google_contents
 
@@ -163,12 +136,10 @@ class GoogleConverter:
         Converts google.genai types.Content from a model response to a list of
         fast-agent content types or tool call requests.
         """
-        fast_agent_parts: List[
-            TextContent | ImageContent | EmbeddedResource | CallToolRequestParams
-        ] = []
+        fast_agent_parts: List[TextContent | ImageContent | EmbeddedResource | CallToolRequestParams] = []
 
-        if content is None or not hasattr(content, 'parts') or content.parts is None:
-                    return [] # Google API response 'content' object is None. Cannot extract parts.
+        if content is None or not hasattr(content, "parts") or content.parts is None:
+            return []  # Google API response 'content' object is None. Cannot extract parts.
 
         for part in content.parts:
             if part.text:
@@ -182,9 +153,7 @@ class GoogleConverter:
                 )
         return fast_agent_parts
 
-    def convert_from_google_function_call(
-        self, function_call: types.FunctionCall
-    ) -> CallToolRequest:
+    def convert_from_google_function_call(self, function_call: types.FunctionCall) -> CallToolRequest:
         """
         Converts a single google.genai types.FunctionCall to a fast-agent CallToolRequest.
         """
@@ -196,9 +165,7 @@ class GoogleConverter:
             ),
         )
 
-    def convert_function_results_to_google(
-        self, tool_results: List[Tuple[str, CallToolResult]]
-    ) -> List[types.Content]:
+    def convert_function_results_to_google(self, tool_results: List[Tuple[str, CallToolResult]]) -> List[types.Content]:
         """
         Converts a list of fast-agent tool results to google.genai types.Content
         with role 'tool'. Handles multimodal content in tool results.
@@ -216,9 +183,7 @@ class GoogleConverter:
                     assert isinstance(item, ImageContent)
                     try:
                         image_bytes = base64.b64decode(get_image_data(item) or "")
-                        media_parts.append(
-                            types.Part.from_bytes(data=image_bytes, mime_type=item.mimeType)
-                        )
+                        media_parts.append(types.Part.from_bytes(data=image_bytes, mime_type=item.mimeType))
                     except Exception as e:
                         textual_outputs.append(f"[Error processing image from tool result: {e}]")
                 elif is_resource_content(item):
@@ -244,29 +209,15 @@ class GoogleConverter:
                         if hasattr(item.resource, "text"):  # Direct text attribute
                             resource_text = item.resource.text
                         # Example: if EmbeddedResource wraps a TextContent-like object in its 'resource' field
-                        elif (
-                            hasattr(item.resource, "type")
-                            and item.resource.type == "text"
-                            and hasattr(item.resource, "text")
-                        ):
+                        elif hasattr(item.resource, "type") and item.resource.type == "text" and hasattr(item.resource, "text"):
                             resource_text = get_text(item.resource)
 
                         if resource_text is not None:
                             textual_outputs.append(resource_text)
                         else:
-                            uri_str = (
-                                item.resource.uri
-                                if hasattr(item.resource, "uri")
-                                else "unknown_uri"
-                            )
-                            mime_str = (
-                                item.resource.mimeType
-                                if hasattr(item.resource, "mimeType")
-                                else "unknown_mime"
-                            )
-                            textual_outputs.append(
-                                f"[Unhandled Resource in Tool: {uri_str}, MIME: {mime_str}]"
-                            )
+                            uri_str = item.resource.uri if hasattr(item.resource, "uri") else "unknown_uri"
+                            mime_str = item.resource.mimeType if hasattr(item.resource, "mimeType") else "unknown_mime"
+                            textual_outputs.append(f"[Unhandled Resource in Tool: {uri_str}, MIME: {mime_str}]")
                 # Add handling for other content types if needed, for now they are skipped or become unhandled resource text
 
             function_response_payload: Dict[str, Any] = {"tool_name": tool_name}
@@ -276,27 +227,17 @@ class GoogleConverter:
             # Only add media_parts if there are some, otherwise Gemini might error on empty parts for function response
             if media_parts:
                 # Create the main FunctionResponse part
-                fn_response_part = types.Part.from_function_response(
-                    name=tool_name, response=function_response_payload
-                )
+                fn_response_part = types.Part.from_function_response(name=tool_name, response=function_response_payload)
                 current_content_parts.append(fn_response_part)
-                current_content_parts.extend(
-                    media_parts
-                )  # Add media parts after the main response part
+                current_content_parts.extend(media_parts)  # Add media parts after the main response part
             else:  # If no media parts, the textual output (if any) is the sole content of the function response
-                fn_response_part = types.Part.from_function_response(
-                    name=tool_name, response=function_response_payload
-                )
+                fn_response_part = types.Part.from_function_response(name=tool_name, response=function_response_payload)
                 current_content_parts.append(fn_response_part)
 
-            google_tool_response_contents.append(
-                types.Content(role="tool", parts=current_content_parts)
-            )
+            google_tool_response_contents.append(types.Content(role="tool", parts=current_content_parts))
         return google_tool_response_contents
 
-    def convert_request_params_to_google_config(
-        self, request_params: RequestParams
-    ) -> types.GenerateContentConfig:
+    def convert_request_params_to_google_config(self, request_params: RequestParams) -> types.GenerateContentConfig:
         """
         Converts fast-agent RequestParams to google.genai types.GenerateContentConfig.
         """
@@ -311,23 +252,15 @@ class GoogleConverter:
             config_args["top_p"] = request_params.topP
         if hasattr(request_params, "stopSequences") and request_params.stopSequences is not None:
             config_args["stop_sequences"] = request_params.stopSequences
-        if (
-            hasattr(request_params, "presencePenalty")
-            and request_params.presencePenalty is not None
-        ):
+        if hasattr(request_params, "presencePenalty") and request_params.presencePenalty is not None:
             config_args["presence_penalty"] = request_params.presencePenalty
-        if (
-            hasattr(request_params, "frequencyPenalty")
-            and request_params.frequencyPenalty is not None
-        ):
+        if hasattr(request_params, "frequencyPenalty") and request_params.frequencyPenalty is not None:
             config_args["frequency_penalty"] = request_params.frequencyPenalty
         if request_params.systemPrompt is not None:
             config_args["system_instruction"] = request_params.systemPrompt
         return types.GenerateContentConfig(**config_args)
 
-    def convert_from_google_content_list(
-        self, contents: List[types.Content]
-    ) -> List[PromptMessageMultipart]:
+    def convert_from_google_content_list(self, contents: List[types.Content]) -> List[PromptMessageMultipart]:
         """
         Converts a list of google.genai types.Content to a list of fast-agent PromptMessageMultipart.
         """
@@ -340,9 +273,7 @@ class GoogleConverter:
         if content.role == "model" and any(part.function_call for part in content.parts):
             return PromptMessageMultipart(role="assistant", content=[])
 
-        fast_agent_parts: List[
-            TextContent | ImageContent | EmbeddedResource | CallToolRequestParams
-        ] = []
+        fast_agent_parts: List[TextContent | ImageContent | EmbeddedResource | CallToolRequestParams] = []
         for part in content.parts:
             if part.text:
                 fast_agent_parts.append(TextContent(type="text", text=part.text))

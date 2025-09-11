@@ -140,9 +140,7 @@ class RouterAgent(BaseAgent):
         request_params: RequestParams | None = None,
         **additional_kwargs,
     ) -> AugmentedLLMProtocol:
-        return await super().attach_llm(
-            llm_factory, model, request_params, verb="Routing", **additional_kwargs
-        )
+        return await super().attach_llm(llm_factory, model, request_params, verb="Routing", **additional_kwargs)
 
     async def generate(
         self,
@@ -195,9 +193,7 @@ class RouterAgent(BaseAgent):
             route, warn = await self._route_request(multipart_messages[-1])
 
             if not route:
-                return None, Prompt.assistant(
-                    warn or "No routing result or warning received (structured)"
-                )
+                return None, Prompt.assistant(warn or "No routing result or warning received (structured)")
 
             # Get the selected agent
             agent: Agent = self.agent_map[route.agent]
@@ -205,9 +201,7 @@ class RouterAgent(BaseAgent):
             # Dispatch the request to the selected agent
             return await agent.structured(multipart_messages, model, request_params)
 
-    async def _route_request(
-        self, message: PromptMessageMultipart
-    ) -> Tuple[RoutingResponse | None, str | None]:
+    async def _route_request(self, message: PromptMessageMultipart) -> Tuple[RoutingResponse | None, str | None]:
         """
         Determine which agent to route the request to.
 
@@ -223,19 +217,13 @@ class RouterAgent(BaseAgent):
 
         # If only one agent is available, use it directly
         if len(self.agents) == 1:
-            return RoutingResponse(
-                agent=self.agents[0].name, confidence="high", reasoning="Only one agent available"
-            ), None
+            return RoutingResponse(agent=self.agents[0].name, confidence="high", reasoning="Only one agent available"), None
 
         # Generate agent descriptions for the context
         agent_descriptions = []
         for agent in self.agents:
             agent_card: AgentCard = await agent.agent_card()
-            agent_descriptions.append(
-                agent_card.model_dump_json(
-                    include={"name", "description", "skills"}, exclude_none=True
-                )
-            )
+            agent_descriptions.append(agent_card.model_dump_json(include={"name", "description", "skills"}, exclude_none=True))
 
         context = ",\n".join(agent_descriptions)
 
@@ -263,8 +251,6 @@ class RouterAgent(BaseAgent):
             return None, warn
         else:
             assert response
-            logger.info(
-                f"Routing structured request to agent: {response.agent or 'error'} (confidence: {response.confidence or ''})"
-            )
+            logger.info(f"Routing structured request to agent: {response.agent or 'error'} (confidence: {response.confidence or ''})")
 
             return response, None

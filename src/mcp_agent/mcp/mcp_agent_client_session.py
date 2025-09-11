@@ -61,8 +61,8 @@ class MCPAgentClientSession(ClientSession, ContextDependent):
         # Extract server_name if provided in kwargs
         from importlib.metadata import version
 
-        version = version("tauricus") or "dev"
-        fast_agent: Implementation = Implementation(name="tauricus", version=version)
+        version = version("europa") or "dev"
+        fast_agent: Implementation = Implementation(name="europa", version=version)
 
         self.session_server_name = kwargs.pop("server_name", None)
         # Extract the notification callbacks if provided
@@ -79,11 +79,7 @@ class MCPAgentClientSession(ClientSession, ContextDependent):
         # 1. Sampling is explicitly configured, OR
         # 2. Application-level auto_sampling is enabled
         sampling_cb = None
-        if (
-            self.server_config
-            and hasattr(self.server_config, "sampling")
-            and self.server_config.sampling
-        ):
+        if self.server_config and hasattr(self.server_config, "sampling") and self.server_config.sampling:
             # Explicit sampling configuration
             sampling_cb = sample
         elif self._should_enable_auto_sampling():
@@ -154,19 +150,13 @@ class MCPAgentClientSession(ClientSession, ContextDependent):
             case ToolListChangedNotification():
                 # Simple notification handling - just call the callback if it exists
                 if self._tool_list_changed_callback and self.session_server_name:
-                    logger.info(
-                        f"Tool list changed for server '{self.session_server_name}', triggering callback"
-                    )
+                    logger.info(f"Tool list changed for server '{self.session_server_name}', triggering callback")
                     # Use asyncio.create_task to prevent blocking the notification handler
                     import asyncio
 
-                    asyncio.create_task(
-                        self._handle_tool_list_change_callback(self.session_server_name)
-                    )
+                    asyncio.create_task(self._handle_tool_list_change_callback(self.session_server_name))
                 else:
-                    logger.debug(
-                        f"Tool list changed for server '{self.session_server_name}' but no callback registered"
-                    )
+                    logger.debug(f"Tool list changed for server '{self.session_server_name}' but no callback registered")
 
         return None
 

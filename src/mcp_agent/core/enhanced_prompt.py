@@ -24,7 +24,7 @@ from mcp_agent.core.exceptions import PromptExitError
 
 # Get the application version
 try:
-    app_version = version("tauricus")
+    app_version = version("europa")
 except:  # noqa: E722
     app_version = "unknown"
 
@@ -128,9 +128,7 @@ def get_text_from_editor(initial_text: str = "") -> str:
     # Create a temporary file for the editor to use.
     # Using a suffix can help some editors with syntax highlighting or mode.
     try:
-        with tempfile.NamedTemporaryFile(
-            mode="w+", delete=False, suffix=".txt", encoding="utf-8"
-        ) as tmp_file:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".txt", encoding="utf-8") as tmp_file:
             if initial_text:
                 tmp_file.write(initial_text)
                 tmp_file.flush()  # Ensure content is written to disk before editor opens it
@@ -158,14 +156,10 @@ def get_text_from_editor(initial_text: str = "") -> str:
         )
         return initial_text
     except subprocess.CalledProcessError as e:
-        rich_print(
-            f"[red]Error: Editor '{editor_cmd_list[0]}' closed with an error (code {e.returncode}).[/red]"
-        )
+        rich_print(f"[red]Error: Editor '{editor_cmd_list[0]}' closed with an error (code {e.returncode}).[/red]")
         return initial_text
     except Exception as e:
-        rich_print(
-            f"[red]An unexpected error occurred while launching or using the editor: {e}[/red]"
-        )
+        rich_print(f"[red]An unexpected error occurred while launching or using the editor: {e}[/red]")
         return initial_text
     finally:
         # Always attempt to clean up the temporary file.
@@ -173,9 +167,7 @@ def get_text_from_editor(initial_text: str = "") -> str:
             try:
                 os.remove(temp_file_path)
             except Exception as e:
-                rich_print(
-                    f"[yellow]Warning: Could not remove temporary file {temp_file_path}: {e}[/yellow]"
-                )
+                rich_print(f"[yellow]Warning: Could not remove temporary file {temp_file_path}: {e}[/yellow]")
 
     return edited_text.strip()  # Added strip() to remove trailing newlines often added by editors
 
@@ -230,9 +222,7 @@ def create_keybindings(on_toggle_multiline=None, app=None):
         current_text = event.app.current_buffer.text
         try:
             # Run the synchronous editor function in a thread
-            edited_text = await event.app.loop.run_in_executor(
-                None, get_text_from_editor, current_text
-            )
+            edited_text = await event.app.loop.run_in_executor(None, get_text_from_editor, current_text)
             event.app.current_buffer.text = edited_text
             # Optionally, move cursor to the end of the edited text
             event.app.current_buffer.cursor_position = len(edited_text)
@@ -370,9 +360,7 @@ async def get_enhanced_input(
         if is_human_input:
             rich_print("[dim]Type /help for commands. Ctrl+T toggles multiline mode.[/dim]")
         else:
-            rich_print(
-                "[dim]Type /help for commands, @agent to switch agent. Ctrl+T toggles multiline mode.[/dim]"
-            )
+            rich_print("[dim]Type /help for commands, @agent to switch agent. Ctrl+T toggles multiline mode.[/dim]")
         rich_print()
         help_message_shown = True
 
@@ -511,9 +499,7 @@ async def get_argument_input(
     if description:
         rich_print(f"  [dim]{arg_name}: {description}[/dim]")
 
-    prompt_text = HTML(
-        f"Enter value for <ansibrightcyan>{arg_name}</ansibrightcyan> {required_text}: "
-    )
+    prompt_text = HTML(f"Enter value for <ansibrightcyan>{arg_name}</ansibrightcyan> {required_text}: ")
 
     # Create prompt session
     prompt_session = PromptSession()
@@ -594,9 +580,7 @@ async def handle_special_commands(command, agent_app=None):
             rich_print("[yellow]No agents available[/yellow]")
         return True
 
-    elif command == "SELECT_PROMPT" or (
-        isinstance(command, str) and command.startswith("SELECT_PROMPT:")
-    ):
+    elif command == "SELECT_PROMPT" or (isinstance(command, str) and command.startswith("SELECT_PROMPT:")):
         # Handle prompt selection UI
         if agent_app:
             # If it's a specific prompt, extract the name
@@ -607,9 +591,7 @@ async def handle_special_commands(command, agent_app=None):
             # Return a dictionary with a select_prompt action to be handled by the caller
             return {"select_prompt": True, "prompt_name": prompt_name}
         else:
-            rich_print(
-                "[yellow]Prompt selection is not available outside of an agent context[/yellow]"
-            )
+            rich_print("[yellow]Prompt selection is not available outside of an agent context[/yellow]")
             return True
 
     elif isinstance(command, str) and command.startswith("SWITCH:"):

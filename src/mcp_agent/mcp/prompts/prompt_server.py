@@ -116,9 +116,7 @@ def create_resource_handler(resource_path: Path, mime_type: str) -> ResourceHand
     return get_resource
 
 
-def get_delimiter_config(
-    config: Optional[PromptConfig] = None, file_path: Optional[Path] = None
-) -> Dict[str, Any]:
+def get_delimiter_config(config: Optional[PromptConfig] = None, file_path: Optional[Path] = None) -> Dict[str, Any]:
     """Get delimiter configuration, falling back to defaults if config is None"""
     # Set defaults
     config_values = {
@@ -229,31 +227,20 @@ def register_prompt(file_path: Path, config: Optional[PromptConfig] = None) -> N
             # Create a function with properly typed parameters
             async def template_handler_with_vars(**kwargs):
                 # Extract template variables from kwargs
-                context = {
-                    var: kwargs.get(var) for var in template_vars if var in kwargs
-                }
+                context = {var: kwargs.get(var) for var in template_vars if var in kwargs}
 
                 # Check for missing variables
                 missing_vars = [var for var in template_vars if var not in context]
                 if missing_vars:
-                    raise ValueError(
-                        f"Missing required template variables: {', '.join(missing_vars)}"
-                    )
+                    raise ValueError(f"Missing required template variables: {', '.join(missing_vars)}")
 
                 # Apply template and create messages
                 content_sections = template.apply_substitutions(context)
-                prompt_messages = create_messages_with_resources(
-                    content_sections, config_values["prompt_files"]
-                )
+                prompt_messages = create_messages_with_resources(content_sections, config_values["prompt_files"])
                 return convert_to_fastmcp_messages(prompt_messages)
 
             # Create a Prompt directly
-            arguments = [
-                PromptArgument(
-                    name=var, description=f"Template variable: {var}", required=True
-                )
-                for var in template_vars
-            ]
+            arguments = [PromptArgument(name=var, description=f"Template variable: {var}", required=True) for var in template_vars]
 
             # Create and add the prompt directly to the prompt manager
             prompt = Prompt(
@@ -267,9 +254,7 @@ def register_prompt(file_path: Path, config: Optional[PromptConfig] = None) -> N
             # Create a simple prompt without variables
             async def template_handler_without_vars() -> list[Message]:
                 content_sections = template.content_sections
-                prompt_messages = create_messages_with_resources(
-                    content_sections, config_values["prompt_files"]
-                )
+                prompt_messages = create_messages_with_resources(content_sections, config_values["prompt_files"])
                 return convert_to_fastmcp_messages(prompt_messages)
 
             # Create a Prompt object directly instead of using the decorator
@@ -303,9 +288,7 @@ def register_prompt(file_path: Path, config: Optional[PromptConfig] = None) -> N
                             )
                         )
 
-                        logger.info(
-                            f"Registered resource: {resource_id} ({resource_file})"
-                        )
+                        logger.info(f"Registered resource: {resource_id} ({resource_file})")
     except Exception as e:
         logger.error(f"Error registering prompt {file_path}: {e}", exc_info=True)
 
@@ -313,9 +296,7 @@ def register_prompt(file_path: Path, config: Optional[PromptConfig] = None) -> N
 def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description="FastMCP Prompt Server")
-    parser.add_argument(
-        "prompt_files", nargs="+", type=str, help="Prompt files to serve"
-    )
+    parser.add_argument("prompt_files", nargs="+", type=str, help="Prompt files to serve")
     parser.add_argument(
         "--user-delimiter",
         type=str,
@@ -359,9 +340,7 @@ def parse_args():
         default="0.0.0.0",
         help="Host to bind to for SSE transport (default: 0.0.0.0)",
     )
-    parser.add_argument(
-        "--test", type=str, help="Test a specific prompt without starting the server"
-    )
+    parser.add_argument("--test", type=str, help="Test a specific prompt without starting the server")
 
     return parser.parse_args()
 
@@ -501,9 +480,7 @@ async def async_main() -> int:
     logger.info("Starting prompt server")
     logger.info(f"Registered {len(prompt_registry)} prompts")
     logger.info(f"Registered {len(exposed_resources)} resources")
-    logger.info(
-        f"Using delimiters: {config.user_delimiter}, {config.assistant_delimiter}, {config.resource_delimiter}"
-    )
+    logger.info(f"Using delimiters: {config.user_delimiter}, {config.assistant_delimiter}, {config.resource_delimiter}")
 
     # If a test prompt was specified, print it and exit
     if args.test:

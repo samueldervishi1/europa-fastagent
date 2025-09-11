@@ -68,16 +68,11 @@ class ParallelAgent(BaseAgent):
         with tracer.start_as_current_span(f"Parallel: '{self.name}' generate"):
             # Execute all fan-out agents in parallel
             responses: List[PromptMessageMultipart] = await asyncio.gather(
-                *[
-                    agent.generate(multipart_messages, request_params)
-                    for agent in self.fan_out_agents
-                ]
+                *[agent.generate(multipart_messages, request_params) for agent in self.fan_out_agents]
             )
 
             # Extract the received message from the input
-            received_message: Optional[str] = (
-                multipart_messages[-1].all_text() if multipart_messages else None
-            )
+            received_message: Optional[str] = multipart_messages[-1].all_text() if multipart_messages else None
 
             # Convert responses to strings for aggregation
             string_responses = []
@@ -88,9 +83,7 @@ class ParallelAgent(BaseAgent):
             aggregated_prompt = self._format_responses(string_responses, received_message)
 
             # Create a new multipart message with the formatted responses
-            formatted_prompt = PromptMessageMultipart(
-                role="user", content=[TextContent(type="text", text=aggregated_prompt)]
-            )
+            formatted_prompt = PromptMessageMultipart(role="user", content=[TextContent(type="text", text=aggregated_prompt)])
 
             # Use the fan-in agent to aggregate the responses
             return await self.fan_in_agent.generate([formatted_prompt], request_params)
@@ -116,9 +109,7 @@ class ParallelAgent(BaseAgent):
         # Format each agent's response
         for i, response in enumerate(responses):
             agent_name = self.fan_out_agents[i].name
-            formatted.append(
-                f'<fastagent:response agent="{agent_name}">\n{response}\n</fastagent:response>'
-            )
+            formatted.append(f'<fastagent:response agent="{agent_name}">\n{response}\n</fastagent:response>')
         return "\n\n".join(formatted)
 
     async def structured(
@@ -145,16 +136,11 @@ class ParallelAgent(BaseAgent):
         with tracer.start_as_current_span(f"Parallel: '{self.name}' generate"):
             # Generate parallel responses first
             responses: List[PromptMessageMultipart] = await asyncio.gather(
-                *[
-                    agent.generate(multipart_messages, request_params)
-                    for agent in self.fan_out_agents
-                ]
+                *[agent.generate(multipart_messages, request_params) for agent in self.fan_out_agents]
             )
 
             # Extract the received message
-            received_message: Optional[str] = (
-                multipart_messages[-1].all_text() if multipart_messages else None
-            )
+            received_message: Optional[str] = multipart_messages[-1].all_text() if multipart_messages else None
 
             # Convert responses to strings
             string_responses = [response.all_text() for response in responses]
@@ -163,9 +149,7 @@ class ParallelAgent(BaseAgent):
             aggregated_prompt = self._format_responses(string_responses, received_message)
 
             # Create a multipart message
-            formatted_prompt = PromptMessageMultipart(
-                role="user", content=[TextContent(type="text", text=aggregated_prompt)]
-            )
+            formatted_prompt = PromptMessageMultipart(role="user", content=[TextContent(type="text", text=aggregated_prompt)])
 
             # Use the fan-in agent to parse the structured output
             return await self.fan_in_agent.structured([formatted_prompt], model, request_params)

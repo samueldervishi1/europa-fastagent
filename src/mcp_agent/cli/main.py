@@ -8,7 +8,7 @@ from mcp_agent.cli.commands import check_config, go, quickstart, setup
 from mcp_agent.cli.terminal import Application
 
 app = typer.Typer(
-    help="Tauricus - AI coordinator powered by Google Gemini with MCP integration",
+    help="Europa - AI coordinator powered by Google Gemini with MCP integration",
     add_completion=False,  # We'll add this later when we have more commands
 )
 
@@ -29,11 +29,11 @@ def show_welcome() -> None:
     from importlib.metadata import version
 
     try:
-        app_version = version("tauricus")
+        app_version = version("europa")
     except:  # noqa: E722
         app_version = "unknown"
 
-    console.print(f"\ntauricus {app_version} [dim](tauricus)[/dim] ")
+    console.print(f"\neuropa {app_version} [dim](europa)[/dim] ")
 
     # Create a table for commands
     table = Table(title="\nAvailable Commands")
@@ -47,9 +47,7 @@ def show_welcome() -> None:
 
     console.print(table)
 
-    console.print(
-        "\n[italic]get started with:[/italic] [bold][cyan]tauricus[/cyan][/bold] [green]setup keys[/green]"
-    )
+    console.print("\n[italic]get started with:[/italic] [bold][cyan]europa[/cyan][/bold] [green]setup keys[/green]")
 
 
 @app.callback(invoke_without_command=True)
@@ -60,7 +58,7 @@ def main(
     color: bool = typer.Option(True, "--color/--no-color", help="Enable/disable color output"),
     version: bool = typer.Option(False, "--version", help="Show version and exit"),
 ) -> None:
-    """tauricus CLI - AI coordinator powered by Google Gemini with MCP integration.
+    """europa CLI - AI coordinator powered by Google Gemini with MCP integration.
 
     Use --help with any command for detailed usage information.
     """
@@ -72,10 +70,10 @@ def main(
         from importlib.metadata import version as get_version
 
         try:
-            app_version = get_version("tauricus")
+            app_version = get_version("europa")
         except:  # noqa: E722
             app_version = "unknown"
-        console.print(f"tauricus v{app_version}")
+        console.print(f"europa v{app_version}")
         raise typer.Exit()
 
     # Show welcome message if no command was invoked

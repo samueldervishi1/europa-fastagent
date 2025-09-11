@@ -9,9 +9,7 @@ import typer
 from mcp_agent.cli.commands.url_parser import generate_server_configs, parse_server_urls
 from mcp_agent.core.fastagent import FastAgent
 
-app = typer.Typer(
-    help="Run an interactive agent directly from the command line without creating an agent.py file"
-)
+app = typer.Typer(help="Run an interactive agent directly from the command line without creating an agent.py file")
 
 
 async def _run_agent(
@@ -50,10 +48,7 @@ async def _run_agent(
             fast.app.context.config.mcp = MCPSettings()
 
         # Initialize servers dictionary if needed
-        if (
-            not hasattr(fast.app.context.config.mcp, "servers")
-            or fast.app.context.config.mcp.servers is None
-        ):
+        if not hasattr(fast.app.context.config.mcp, "servers") or fast.app.context.config.mcp.servers is None:
             fast.app.context.config.mcp.servers = {}
 
         # Add each URL server to the config
@@ -175,30 +170,14 @@ def run_async_agent(
 def go(
     ctx: typer.Context,
     name: str = typer.Option("FastAgent CLI", "--name", help="Name for the agent"),
-    instruction: str = typer.Option(
-        "You are a helpful AI Agent.", "--instruction", "-i", help="Instruction for the agent"
-    ),
-    config_path: Optional[str] = typer.Option(
-        None, "--config-path", "-c", help="Path to config file"
-    ),
-    servers: Optional[str] = typer.Option(
-        None, "--servers", help="Comma-separated list of server names to enable from config"
-    ),
-    urls: Optional[str] = typer.Option(
-        None, "--url", help="Comma-separated list of HTTP/SSE URLs to connect to"
-    ),
-    auth: Optional[str] = typer.Option(
-        None, "--auth", help="Bearer token for authorization with URL-based servers"
-    ),
-    model: Optional[str] = typer.Option(
-        None, "--model", help="Override the default model (e.g., haiku, sonnet, gpt-4)"
-    ),
-    message: Optional[str] = typer.Option(
-        None, "--message", "-m", help="Message to send to the agent (skips interactive mode)"
-    ),
-    prompt_file: Optional[str] = typer.Option(
-        None, "--prompt-file", "-p", help="Path to a prompt file to use (either text or JSON)"
-    ),
+    instruction: str = typer.Option("You are a helpful AI Agent.", "--instruction", "-i", help="Instruction for the agent"),
+    config_path: Optional[str] = typer.Option(None, "--config-path", "-c", help="Path to config file"),
+    servers: Optional[str] = typer.Option(None, "--servers", help="Comma-separated list of server names to enable from config"),
+    urls: Optional[str] = typer.Option(None, "--url", help="Comma-separated list of HTTP/SSE URLs to connect to"),
+    auth: Optional[str] = typer.Option(None, "--auth", help="Bearer token for authorization with URL-based servers"),
+    model: Optional[str] = typer.Option(None, "--model", help="Override the default model (e.g., haiku, sonnet, gpt-4)"),
+    message: Optional[str] = typer.Option(None, "--message", "-m", help="Message to send to the agent (skips interactive mode)"),
+    prompt_file: Optional[str] = typer.Option(None, "--prompt-file", "-p", help="Path to a prompt file to use (either text or JSON)"),
 ) -> None:
     """
     Run an interactive agent directly from the command line.

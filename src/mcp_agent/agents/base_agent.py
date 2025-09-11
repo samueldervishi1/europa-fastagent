@@ -60,9 +60,7 @@ if TYPE_CHECKING:
     from mcp_agent.context import Context
 
 
-DEFAULT_CAPABILITIES = AgentCapabilities(
-    streaming=False, pushNotifications=False, stateTransitionHistory=False
-)
+DEFAULT_CAPABILITIES = AgentCapabilities(streaming=False, pushNotifications=False, stateTransitionHistory=False)
 
 
 class BaseAgent(MCPAggregator, AgentProtocol):
@@ -148,9 +146,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
             The created LLM instance
         """
         # Start with agent's default params
-        effective_params = (
-            self._default_request_params.model_copy() if self._default_request_params else None
-        )
+        effective_params = self._default_request_params.model_copy() if self._default_request_params else None
 
         # Override with explicitly passed request_params
         if request_params:
@@ -167,9 +163,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
             effective_params.model = model
 
         # Create the LLM instance
-        self._llm = llm_factory(
-            agent=self, request_params=effective_params, context=self._context, **additional_kwargs
-        )
+        self._llm = llm_factory(agent=self, request_params=effective_params, context=self._context, **additional_kwargs)
 
         return self._llm
 
@@ -225,9 +219,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
         response = await self.generate([prompt], None)
         return response.all_text()
 
-    def _normalize_message_input(
-        self, message: Union[str, PromptMessage, PromptMessageMultipart]
-    ) -> PromptMessageMultipart:
+    def _normalize_message_input(self, message: Union[str, PromptMessage, PromptMessageMultipart]) -> PromptMessageMultipart:
         """
         Convert a message of any supported type to PromptMessageMultipart.
 
@@ -301,9 +293,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
                     payload={"exit_requested": True, "error": str(e)},
                 )
             except Exception as e:
-                await self.executor.signal(
-                    request_id, payload=f"Error getting human input: {str(e)}"
-                )
+                await self.executor.signal(request_id, payload=f"Error getting human input: {str(e)}")
 
         asyncio.create_task(call_callback_and_signal())
 
@@ -370,9 +360,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
         else:
             return await super().call_tool(name, arguments)
 
-    async def _call_human_input_tool(
-        self, arguments: Dict[str, Any] | None = None
-    ) -> CallToolResult:
+    async def _call_human_input_tool(self, arguments: Dict[str, Any] | None = None) -> CallToolResult:
         """
         Handle human input request via tool calling.
 
@@ -403,13 +391,9 @@ class BaseAgent(MCPAggregator, AgentProtocol):
             result = await self.request_human_input(request=request)
 
             # Use response attribute if available, otherwise use the result directly
-            response_text = (
-                result.response if isinstance(result, HumanInputResponse) else str(result)
-            )
+            response_text = result.response if isinstance(result, HumanInputResponse) else str(result)
 
-            return CallToolResult(
-                content=[TextContent(type="text", text=f"Human response: {response_text}")]
-            )
+            return CallToolResult(content=[TextContent(type="text", text=f"Human response: {response_text}")])
 
         except PromptExitError:
             raise
@@ -497,9 +481,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
         response = await self.generate(multipart_messages, None)
         return response.first_text()
 
-    async def get_embedded_resources(
-        self, resource_uri: str, server_name: str | None = None
-    ) -> List[EmbeddedResource]:
+    async def get_embedded_resources(self, resource_uri: str, server_name: str | None = None) -> List[EmbeddedResource]:
         """
         Get a resource from an MCP server and return it as a list of embedded resources ready for use in prompts.
 
@@ -519,9 +501,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
         # Convert each resource content to an EmbeddedResource
         embedded_resources: List[EmbeddedResource] = []
         for resource_content in result.contents:
-            embedded_resource = EmbeddedResource(
-                type="resource", resource=resource_content, annotations=None
-            )
+            embedded_resource = EmbeddedResource(type="resource", resource=resource_content, annotations=None)
             embedded_resources.append(embedded_resource)
 
         return embedded_resources
@@ -547,9 +527,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
             The agent's response as a string
         """
         # Get the embedded resources
-        embedded_resources: List[EmbeddedResource] = await self.get_embedded_resources(
-            resource_uri, server_name
-        )
+        embedded_resources: List[EmbeddedResource] = await self.get_embedded_resources(resource_uri, server_name)
 
         # Create or update the prompt message
         prompt: PromptMessageMultipart
@@ -568,9 +546,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
             prompt = prompt_content
             prompt.content.extend(embedded_resources)
         else:
-            raise TypeError(
-                "prompt_content must be a string, PromptMessage, or PromptMessageMultipart"
-            )
+            raise TypeError("prompt_content must be a string, PromptMessage, or PromptMessageMultipart")
 
         response: PromptMessageMultipart = await self.generate([prompt], None)
         return response.first_text()
@@ -617,9 +593,7 @@ class BaseAgent(MCPAggregator, AgentProtocol):
         with self.tracer.start_as_current_span(f"Agent: '{self.name}' structured"):
             return await self._llm.structured(multipart_messages, model, request_params)
 
-    async def apply_prompt_messages(
-        self, prompts: List[PromptMessageMultipart], request_params: RequestParams | None = None
-    ) -> str:
+    async def apply_prompt_messages(self, prompts: List[PromptMessageMultipart], request_params: RequestParams | None = None) -> str:
         """
         Apply a list of prompt messages and return the result.
 

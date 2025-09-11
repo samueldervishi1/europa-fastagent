@@ -1,4 +1,3 @@
-
 from mcp.types import (
     PromptMessage,
 )
@@ -12,9 +11,7 @@ from mcp_agent.logging.logger import get_logger
 _logger = get_logger(__name__)
 
 
-class OpenAISamplingConverter(
-    ProviderFormatConverter[ChatCompletionMessageParam, ChatCompletionMessage]
-):
+class OpenAISamplingConverter(ProviderFormatConverter[ChatCompletionMessageParam, ChatCompletionMessage]):
     @classmethod
     def from_prompt_message(cls, message: PromptMessage) -> ChatCompletionMessageParam:
         """Convert an MCP PromptMessage to an OpenAI message dict."""

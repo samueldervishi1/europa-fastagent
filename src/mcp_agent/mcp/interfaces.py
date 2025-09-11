@@ -166,9 +166,7 @@ class AgentProtocol(AugmentedLLMProtocol, Protocol):
 
     async def list_resources(self, server_name: str | None = None) -> Mapping[str, List[str]]: ...
 
-    async def get_resource(
-        self, resource_uri: str, server_name: str | None = None
-    ) -> ReadResourceResult:
+    async def get_resource(self, resource_uri: str, server_name: str | None = None) -> ReadResourceResult:
         """Get a resource from a specific server or search all servers"""
         ...
 
@@ -211,9 +209,7 @@ class ModelFactoryClassProtocol(Protocol):
     """
 
     @classmethod
-    def create_factory(
-        cls, model_string: str, request_params: Optional[RequestParams] = None
-    ) -> Callable[..., Any]:
+    def create_factory(cls, model_string: str, request_params: Optional[RequestParams] = None) -> Callable[..., Any]:
         """
         Creates a factory function that can be used to construct an LLM instance.
 

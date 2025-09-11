@@ -79,9 +79,7 @@ class DeepSeekAugmentedLLM(OpenAIAugmentedLLM):
             - All required fields must be included"""
         )
 
-        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(
-            multipart_messages, request_params
-        )
+        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(multipart_messages, request_params)
         return self._structured_from_multipart(result, model)
 
     @classmethod

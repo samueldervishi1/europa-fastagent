@@ -38,12 +38,14 @@ SendFunc = Callable[[Union[str, PromptMessage, PromptMessageMultipart], str], Aw
 
 class PromptProvider(Protocol):
     """Protocol for objects that can provide prompt functionality."""
-    
+
     async def list_prompts(self, server_name: Optional[str] = None, agent_name: Optional[str] = None) -> Mapping[str, List[Prompt]]:
         """List available prompts."""
         ...
-    
-    async def apply_prompt(self, prompt_name: str, arguments: Optional[Dict[str, str]] = None, agent_name: Optional[str] = None, **kwargs) -> str:
+
+    async def apply_prompt(
+        self, prompt_name: str, arguments: Optional[Dict[str, str]] = None, agent_name: Optional[str] = None, **kwargs
+    ) -> str:
         """Apply a prompt."""
         ...
 
@@ -153,16 +155,12 @@ class InteractivePrompt:
                                     selected_prompt["namespaced_name"],
                                 )
                             else:
-                                rich_print(
-                                    f"[red]Invalid prompt number: {prompt_index}. Valid range is 1-{len(all_prompts)}[/red]"
-                                )
+                                rich_print(f"[red]Invalid prompt number: {prompt_index}. Valid range is 1-{len(all_prompts)}[/red]")
                                 # Show the prompt list for convenience
                                 await self._list_prompts(prompt_provider, agent)
                         else:
                             # Use the name-based selection
-                            await self._select_prompt(
-                                prompt_provider, agent, prompt_name
-                            )
+                            await self._select_prompt(prompt_provider, agent, prompt_name)
                         continue
 
                 # Skip further processing if:
@@ -197,7 +195,7 @@ class InteractivePrompt:
         try:
             # Call list_prompts on the provider
             prompt_servers = await prompt_provider.list_prompts(server_name=None, agent_name=agent_name)
-            
+
             all_prompts = []
 
             # Process the returned prompt servers
@@ -310,9 +308,7 @@ class InteractivePrompt:
             rich_print(f"[red]Error listing prompts: {e}[/red]")
             rich_print(f"[dim]{traceback.format_exc()}[/dim]")
 
-    async def _select_prompt(
-        self, prompt_provider: PromptProvider, agent_name: str, requested_name: Optional[str] = None
-    ) -> None:
+    async def _select_prompt(self, prompt_provider: PromptProvider, agent_name: str, requested_name: Optional[str] = None) -> None:
         """
         Select and apply a prompt.
 
@@ -326,7 +322,7 @@ class InteractivePrompt:
         try:
             # Get all available prompts directly from the prompt provider
             rich_print(f"\n[bold]Fetching prompts for agent [cyan]{agent_name}[/cyan]...[/bold]")
-            
+
             # Call list_prompts on the provider
             prompt_servers = await prompt_provider.list_prompts(server_name=None, agent_name=agent_name)
 
@@ -405,11 +401,7 @@ class InteractivePrompt:
 
             # Handle specifically requested prompt
             if requested_name:
-                matching_prompts = [
-                    p
-                    for p in all_prompts
-                    if p["name"] == requested_name or p["namespaced_name"] == requested_name
-                ]
+                matching_prompts = [p for p in all_prompts if p["name"] == requested_name or p["namespaced_name"] == requested_name]
 
                 if not matching_prompts:
                     rich_print(f"[red]Prompt '{requested_name}' not found[/red]")
@@ -428,10 +420,7 @@ class InteractivePrompt:
                         rich_print(f"  {i + 1}. {p['namespaced_name']} - {p['description']}")
 
                     # Get user selection
-                    selection = (
-                        await get_selection_input("Enter prompt number to select: ", default="1")
-                        or ""
-                    )
+                    selection = await get_selection_input("Enter prompt number to select: ", default="1") or ""
 
                     try:
                         idx = int(selection) - 1
@@ -514,13 +503,9 @@ class InteractivePrompt:
                         f"\n[bold]Prompt [cyan]{selected_prompt['name']}[/cyan] requires {len(required_args)} arguments and has {len(optional_args)} optional arguments:[/bold]"
                     )
                 elif required_args:
-                    rich_print(
-                        f"\n[bold]Prompt [cyan]{selected_prompt['name']}[/cyan] requires {len(required_args)} arguments:[/bold]"
-                    )
+                    rich_print(f"\n[bold]Prompt [cyan]{selected_prompt['name']}[/cyan] requires {len(required_args)} arguments:[/bold]")
                 elif optional_args:
-                    rich_print(
-                        f"\n[bold]Prompt [cyan]{selected_prompt['name']}[/cyan] has {len(optional_args)} optional arguments:[/bold]"
-                    )
+                    rich_print(f"\n[bold]Prompt [cyan]{selected_prompt['name']}[/cyan] has {len(optional_args)} optional arguments:[/bold]")
 
                 # Collect required arguments
                 for arg_name in required_args:

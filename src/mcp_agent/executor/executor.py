@@ -142,9 +142,7 @@ class Executor(ABC, ContextDependent):
         """
         Emit a signal.
         """
-        signal = Signal[SignalValueT](
-            name=signal_name, payload=payload, description=signal_description
-        )
+        signal = Signal[SignalValueT](name=signal_name, payload=payload, description=signal_description)
         await self.signal_bus.signal(signal)
 
     async def wait_for_signal(
@@ -174,9 +172,7 @@ class Executor(ABC, ContextDependent):
                 },
             )
 
-        signal = Signal[signal_type](
-            name=signal_name, description=signal_description, workflow_id=workflow_id
-        )
+        signal = Signal[signal_type](name=signal_name, description=signal_description, workflow_id=workflow_id)
         return await self.signal_bus.wait_for_signal(signal)
 
 
@@ -195,9 +191,7 @@ class AsyncioExecutor(Executor):
         if self.config.max_concurrent_activities is not None:
             self._activity_semaphore = asyncio.Semaphore(self.config.max_concurrent_activities)
 
-    async def _execute_task(
-        self, task: Callable[..., R] | Coroutine[Any, Any, R], **kwargs: Any
-    ) -> R | BaseException:
+    async def _execute_task(self, task: Callable[..., R] | Coroutine[Any, Any, R], **kwargs: Any) -> R | BaseException:
         async def run_task(task: Callable[..., R] | Coroutine[Any, Any, R]) -> R:
             try:
                 if asyncio.iscoroutine(task):

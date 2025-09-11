@@ -19,6 +19,7 @@ from mcp_agent.mcp.helpers.content_helpers import get_image_data, get_text
 PromptMessageMultipartType = Union[object]  # Will be replaced with actual type
 try:
     from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
+
     PromptMessageMultipartType = PromptMessageMultipart
 except ImportError:
     # During initialization, there might be a circular import.
@@ -56,9 +57,7 @@ class MessageContent:
         return result
 
     @staticmethod
-    def join_text(
-        message: Union[PromptMessage, "PromptMessageMultipart"], separator: str = "\n\n"
-    ) -> str:
+    def join_text(message: Union[PromptMessage, "PromptMessageMultipart"], separator: str = "\n\n") -> str:
         """
         Join all text content in a message with a separator.
 

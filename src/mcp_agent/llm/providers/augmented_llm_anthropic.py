@@ -69,9 +69,7 @@ class AnthropicAugmentedLLM(AugmentedLLM[MessageParam, Message]):
         # Initialize logger - keep it simple without name reference
         self.logger = get_logger(__name__)
 
-        super().__init__(
-            *args, provider=Provider.ANTHROPIC, type_converter=AnthropicSamplingConverter, **kwargs
-        )
+        super().__init__(*args, provider=Provider.ANTHROPIC, type_converter=AnthropicSamplingConverter, **kwargs)
 
     def _initialize_default_params(self, kwargs: dict) -> RequestParams:
         """Initialize Anthropic-specific default parameters"""
@@ -148,9 +146,7 @@ class AnthropicAugmentedLLM(AugmentedLLM[MessageParam, Message]):
                 base_args["max_tokens"] = params.maxTokens
 
             # Use the base class method to prepare all arguments with Anthropic-specific exclusions
-            arguments = self.prepare_provider_arguments(
-                base_args, params, self.ANTHROPIC_EXCLUDE_FIELDS
-            )
+            arguments = self.prepare_provider_arguments(base_args, params, self.ANTHROPIC_EXCLUDE_FIELDS)
 
             self.logger.debug(f"{arguments}")
 
@@ -211,9 +207,7 @@ class AnthropicAugmentedLLM(AugmentedLLM[MessageParam, Message]):
                 break
             elif response.stop_reason == "stop_sequence":
                 # We have reached a stop sequence
-                self.logger.debug(
-                    f"Iteration {i}: Stopping because finish_reason is 'stop_sequence'"
-                )
+                self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'stop_sequence'")
                 break
             elif response.stop_reason == "max_tokens":
                 # We have reached the max tokens limit
@@ -268,9 +262,7 @@ class AnthropicAugmentedLLM(AugmentedLLM[MessageParam, Message]):
                             params=CallToolRequestParams(name=tool_name, arguments=tool_args),
                         )
                         # TODO -- support MCP isError etc.
-                        result = await self.call_tool(
-                            request=tool_call_request, tool_call_id=tool_use_id
-                        )
+                        result = await self.call_tool(request=tool_call_request, tool_call_id=tool_use_id)
                         self.show_tool_result(result)
 
                         # Add each result to our collection
@@ -322,9 +314,7 @@ class AnthropicAugmentedLLM(AugmentedLLM[MessageParam, Message]):
         last_message = multipart_messages[-1]
 
         # Add all previous messages to history (or all messages if last is from assistant)
-        messages_to_add = (
-            multipart_messages[:-1] if last_message.role == "user" else multipart_messages
-        )
+        messages_to_add = multipart_messages[:-1] if last_message.role == "user" else multipart_messages
         converted = []
         for msg in messages_to_add:
             converted.append(AnthropicConverter.convert_to_anthropic(msg))
@@ -357,9 +347,7 @@ class AnthropicAugmentedLLM(AugmentedLLM[MessageParam, Message]):
             )
         )
 
-        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(
-            multipart_messages, request_params
-        )
+        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(multipart_messages, request_params)
         return self._structured_from_multipart(result, model)
 
     @classmethod

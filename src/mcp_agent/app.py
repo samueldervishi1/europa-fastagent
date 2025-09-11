@@ -71,9 +71,7 @@ class MCPApp:
     @property
     def context(self) -> Context:
         if self._context is None:
-            raise RuntimeError(
-                "MCPApp not initialized, please call initialize() first, or use async with app.run()."
-            )
+            raise RuntimeError("MCPApp not initialized, please call initialize() first, or use async with app.run().")
         return self._context
 
     @property

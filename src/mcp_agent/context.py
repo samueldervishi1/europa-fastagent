@@ -79,7 +79,7 @@ async def configure_otel(config: "Settings") -> None:
     from importlib.metadata import version
 
     try:
-        app_version = version("tauricus")
+        app_version = version("europa")
     except:  # noqa: E722
         app_version = "unknown"
 
@@ -151,9 +151,7 @@ async def configure_executor(config: "Settings"):
     return AsyncioExecutor()
 
 
-async def initialize_context(
-    config: Optional[Union["Settings", str]] = None, store_globally: bool = False
-):
+async def initialize_context(config: Optional[Union["Settings", str]] = None, store_globally: bool = False):
     """
     Initialize the global application context.
     """

@@ -159,18 +159,9 @@ class ServerConnection:
         Create a new session instance for this server connection.
         """
 
-        read_timeout = (
-            timedelta(seconds=self.server_config.read_timeout_seconds)
-            if self.server_config.read_timeout_seconds
-            else None
-        )
+        read_timeout = timedelta(seconds=self.server_config.read_timeout_seconds) if self.server_config.read_timeout_seconds else None
 
-        session = self._client_session_factory(
-            read_stream, 
-            send_stream, 
-            read_timeout,
-            server_config=self.server_config
-        )
+        session = self._client_session_factory(read_stream, send_stream, read_timeout, server_config=self.server_config)
 
         self.session = session
 
@@ -203,7 +194,9 @@ async def _server_lifecycle_task(server_conn: ServerConnection) -> None:
             },
         )
         server_conn._error_occurred = True
-        server_conn._error_message = f"HTTP Error: {http_exc.response.status_code} {http_exc.response.reason_phrase} for URL: {http_exc.request.url}"
+        server_conn._error_message = (
+            f"HTTP Error: {http_exc.response.status_code} {http_exc.response.reason_phrase} for URL: {http_exc.request.url}"
+        )
         server_conn._initialized_event.set()
         # No raise - let get_server handle it with a friendly message
 
@@ -230,9 +223,7 @@ async def _server_lifecycle_task(server_conn: ServerConnection) -> None:
                 else:
                     error_messages.append(f"Error: {type(subexc).__name__}: {subexc}")
                 if hasattr(subexc, "__cause__") and subexc.__cause__:
-                    error_messages.append(
-                        f"Caused by: {type(subexc.__cause__).__name__}: {subexc.__cause__}"
-                    )
+                    error_messages.append(f"Caused by: {type(subexc.__cause__).__name__}: {subexc.__cause__}")
             server_conn._error_message = error_messages
         else:
             # For regular exceptions, keep the traceback but format it more cleanly
@@ -250,9 +241,7 @@ class MCPConnectionManager(ContextDependent):
     Integrates with the application context system for proper resource management.
     """
 
-    def __init__(
-        self, server_registry: "ServerRegistry", context: Optional["Context"] = None
-    ) -> None:
+    def __init__(self, server_registry: "ServerRegistry", context: Optional["Context"] = None) -> None:
         super().__init__(context=context)
         self.server_registry = server_registry
         self.running_servers: Dict[str, ServerConnection] = {}
@@ -411,9 +400,7 @@ class MCPConnectionManager(ContextDependent):
 
     async def get_server_capabilities(self, server_name: str) -> ServerCapabilities | None:
         """Get the capabilities of a specific server."""
-        server_conn = await self.get_server(
-            server_name, client_session_factory=MCPAgentClientSession
-        )
+        server_conn = await self.get_server(server_name, client_session_factory=MCPAgentClientSession)
         return server_conn.server_capabilities if server_conn else None
 
     async def disconnect_server(self, server_name: str) -> None:

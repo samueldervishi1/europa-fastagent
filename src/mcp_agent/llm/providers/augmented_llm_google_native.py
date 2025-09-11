@@ -79,9 +79,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
             response_schema = schema
 
         # Set config for structured output
-        generate_content_config = self._converter.convert_request_params_to_google_config(
-            request_params
-        )
+        generate_content_config = self._converter.convert_request_params_to_google_config(request_params)
         generate_content_config.response_mime_type = "application/json"
         generate_content_config.response_schema = response_schema
 
@@ -163,9 +161,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
             api_key = self._api_key()  # Assuming _api_key() exists in base class
             if not api_key:
                 # Handle case where API key is missing
-                raise ProviderKeyError(
-                    "Google API key not found.", "Please configure your Google API key."
-                )
+                raise ProviderKeyError("Google API key not found.", "Please configure your Google API key.")
 
             # Check for Vertex AI configuration
             if (
@@ -219,17 +215,13 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
         # Load full conversation history if use_history is true
         if request_params.use_history:
             # Get history from self.history and convert to google.genai format
-            conversation_history = self._converter.convert_to_google_content(
-                self.history.get(include_completion_history=True)
-            )
+            conversation_history = self._converter.convert_to_google_content(self.history.get(include_completion_history=True))
         else:
             # If not using history, start with an empty list
             conversation_history = []
 
         self.logger.debug(f"Google completion requested with messages: {conversation_history}")
-        self._log_chat_progress(
-            self.chat_turn(), model=request_params.model
-        )  # Log chat progress at the start of completion
+        self._log_chat_progress(self.chat_turn(), model=request_params.model)  # Log chat progress at the start of completion
 
         # Keep track of the number of messages in history before this turn
         initial_history_length = len(conversation_history)
@@ -242,17 +234,13 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
             )  # Convert fast-agent tools to google.genai tools
 
             # 2. Prepare generate_content arguments
-            generate_content_config = self._converter.convert_request_params_to_google_config(
-                request_params
-            )
+            generate_content_config = self._converter.convert_request_params_to_google_config(request_params)
 
             # Add tools and tool_config to generate_content_config if tools are available
             if available_tools:
                 generate_content_config.tools = available_tools
                 # Set tool_config mode to AUTO to allow the model to decide when to call tools
-                generate_content_config.tool_config = types.ToolConfig(
-                    function_calling_config=types.FunctionCallingConfig(mode="AUTO")
-                )
+                generate_content_config.tool_config = types.ToolConfig(function_calling_config=types.FunctionCallingConfig(mode="AUTO"))
 
             # 3. Call the google.genai API
             try:
@@ -282,9 +270,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
             candidate = api_response.candidates[0]  # Process the first candidate
 
             # Convert the model's response content to fast-agent types
-            model_response_content_parts = self._converter.convert_from_google_content(
-                candidate.content
-            )
+            model_response_content_parts = self._converter.convert_from_google_content(candidate.content)
 
             # Add model's response to conversation history for potential next turn
             # This is for the *internal* conversation history of this completion call
@@ -298,9 +284,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
             for part in model_response_content_parts:
                 if isinstance(part, TextContent):
                     responses.append(part)  # Add text content to the final responses to be returned
-                    assistant_message_parts.append(
-                        part
-                    )  # Collect text for potential assistant message display
+                    assistant_message_parts.append(part)  # Collect text for potential assistant message display
                 elif isinstance(part, CallToolRequestParams):
                     # This is a function call requested by the model
                     tool_calls_to_execute.append(part)  # Collect tool calls to execute
@@ -308,9 +292,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
             # Display assistant message if there is text content
             if assistant_message_parts:
                 # Combine text parts for display
-                assistant_text = "".join(
-                    [p.text for p in assistant_message_parts if isinstance(p, TextContent)]
-                )
+                assistant_text = "".join([p.text for p in assistant_message_parts if isinstance(p, TextContent)])
                 # Display the assistant message. If there are tool calls, indicate that.
                 if tool_calls_to_execute:
                     tool_names = ", ".join([tc.name for tc in tool_calls_to_execute])
@@ -327,22 +309,16 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
                 tool_results = []
                 for tool_call_params in tool_calls_to_execute:
                     # Convert to CallToolRequest and execute
-                    tool_call_request = CallToolRequest(
-                        method="tools/call", params=tool_call_params
-                    )
+                    tool_call_request = CallToolRequest(method="tools/call", params=tool_call_params)
                     self.show_tool_call(
                         aggregator_response.tools,  # Pass fast-agent tool definitions for display
                         tool_call_request.params.name,
-                        str(
-                            tool_call_request.params.arguments
-                        ),  # Convert dict to string for display
+                        str(tool_call_request.params.arguments),  # Convert dict to string for display
                     )
 
                     # Execute the tool call. google.genai does not provide a tool_call_id, pass None.
                     result = await self.call_tool(tool_call_request, None)
-                    self.show_oai_tool_result(
-                        str(result.content)
-                    )  # Use show_oai_tool_result for consistency
+                    self.show_oai_tool_result(str(result.content))  # Use show_oai_tool_result for consistency
 
                     tool_results.append((tool_call_params.name, result))  # Store name and result
 
@@ -350,9 +326,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
                     responses.extend(result.content)
 
                 # Convert tool results back to google.genai format and add to conversation_history for the next turn
-                tool_response_google_contents = self._converter.convert_function_results_to_google(
-                    tool_results
-                )
+                tool_response_google_contents = self._converter.convert_function_results_to_google(tool_results)
                 conversation_history.extend(tool_response_google_contents)
 
                 self.logger.debug(f"Iteration {i}: Tool call results processed.")
@@ -360,15 +334,9 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
                 # If no tool calls, check finish reason to stop or continue
                 # google.genai finish reasons: STOP, MAX_TOKENS, SAFETY, RECITATION, OTHER
                 if candidate.finish_reason in ["STOP", "MAX_TOKENS", "SAFETY"]:
-                    self.logger.debug(
-                        f"Iteration {i}: Stopping because finish_reason is '{candidate.finish_reason}'"
-                    )
+                    self.logger.debug(f"Iteration {i}: Stopping because finish_reason is '{candidate.finish_reason}'")
                     # Display message if stopping due to max tokens
-                    if (
-                        candidate.finish_reason == "MAX_TOKENS"
-                        and request_params
-                        and request_params.maxTokens is not None
-                    ):
+                    if candidate.finish_reason == "MAX_TOKENS" and request_params and request_params.maxTokens is not None:
                         message_text = Text(
                             f"the assistant has reached the maximum token limit ({request_params.maxTokens})",
                             style="dim green italic",
@@ -377,18 +345,14 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
                     break  # Exit the loop if a stopping condition is met
                 # If no tool calls and no explicit stopping reason, the model might be done.
                 # Break to avoid infinite loops if the model doesn't explicitly stop or call tools.
-                self.logger.debug(
-                    f"Iteration {i}: No tool calls and no explicit stop reason, breaking."
-                )
+                self.logger.debug(f"Iteration {i}: No tool calls and no explicit stop reason, breaking.")
                 break
 
         # 6. Update history after all iterations are done (or max_iterations reached)
         # Only add the new messages generated during this completion turn to history
         if request_params.use_history:
             new_google_messages = conversation_history[initial_history_length:]
-            new_multipart_messages = self._converter.convert_from_google_content_list(
-                new_google_messages
-            )
+            new_multipart_messages = self._converter.convert_from_google_content_list(new_google_messages)
             self.history.extend(new_multipart_messages)
 
         self._log_chat_finished(model=request_params.model)  # Use model from request_params
@@ -403,9 +367,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
         """
         Applies the prompt messages and potentially calls the LLM for completion.
         """
-        request_params = self.get_request_params(
-            request_params=request_params
-        )  # Get request params
+        request_params = self.get_request_params(request_params=request_params)  # Get request params
 
         # Add incoming messages to history before calling completion
         # This ensures the current user message is part of the history for the API call
@@ -441,9 +403,7 @@ class GoogleNativeAugmentedLLM(AugmentedLLM[types.Content, types.Content]):
         # Currently a pass-through, can add Google-specific logic if needed
         return request
 
-    async def post_tool_call(
-        self, tool_call_id: str | None, request: CallToolRequest, result: CallToolResult
-    ):
+    async def post_tool_call(self, tool_call_id: str | None, request: CallToolRequest, result: CallToolResult):
         """
         Hook called after a tool call.
 

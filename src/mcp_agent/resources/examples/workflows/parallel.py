@@ -49,9 +49,7 @@ fast = FastAgent(
 )
 async def main() -> None:
     async with fast.run() as agent:
-        await agent.parallel.send(
-            Prompt.user("Student short story submission", Path("short_story.txt"))
-        )
+        await agent.parallel.send(Prompt.user("Student short story submission", Path("short_story.txt")))
 
 
 if __name__ == "__main__":
