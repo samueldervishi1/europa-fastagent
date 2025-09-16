@@ -555,6 +555,62 @@ async def handle_special_commands(command, agent_app=None):
         rich_print("  @agent_name    - Switch to agent")
         rich_print("  STOP           - Return control back to the workflow")
         rich_print("  EXIT           - Exit fast-agent, terminating any running workflows")
+
+        rich_print("\n[bold]EUROPA MCP SERVERS & EXAMPLES:[/bold]")
+
+        rich_print("\n[bold]File Operations (Filesystem):[/bold]")
+        rich_print('    • "list files in current directory" - Browse files')
+        rich_print('    • "create new folder called docs" - Make directories')
+        rich_print('    • "read the README file" - View file contents')
+
+        rich_print("\n[bold]Web Research (Tavily):[/bold]")
+        rich_print('    • "search for latest React best practices" - Web search')
+        rich_print('    • "find information about FastAPI vs Django" - Research topics')
+
+        rich_print("\n[bold]Terminal Operations:[/bold]")
+        rich_print('    • "run ls -la" - Execute shell commands')
+        rich_print('    • "check system status" - System information')
+        rich_print('    • "install package with npm" - Package management')
+
+        rich_print("\n[bold]Memory & Knowledge:[/bold]")
+        rich_print('    • "remember I prefer React over Vue" - Store preferences')
+        rich_print('    • "what did I work on yesterday?" - Recall information')
+        rich_print('    • "save this meeting note" - Store important data')
+
+        rich_print("\n[bold]Gmail & Email:[/bold]")
+        rich_print('    • "check my unread emails" - View inbox')
+        rich_print('    • "send email to john@example.com" - Compose messages')
+        rich_print('    • "reply to the last email" - Email responses')
+
+        rich_print("\n[bold]Google Calendar:[/bold]")
+        rich_print('    • "schedule meeting tomorrow at 2pm" - Create events')
+        rich_print('    • "what meetings do I have today?" - View schedule')
+        rich_print('    • "block 2 hours for coding time" - Time blocking')
+        rich_print('    • "invite john@company.com to project meeting" - Send invitations')
+
+        rich_print("\n[bold]GitHub & Repository Management:[/bold]")
+        rich_print('    • "create new repository MyProject" - Create repos')
+        rich_print('    • "list my repositories" - Browse your repos')
+        rich_print('    • "commit and push changes" - Version control')
+
+        rich_print("\n[bold]Spring Boot Generator:[/bold]")
+        rich_print('    • "create spring boot project MyAPI" - Generate new project')
+        rich_print('    • "generate from OpenAPI spec api.yaml" - Create from YAML')
+        rich_print('    • "list available spring dependencies" - Show options')
+
+        rich_print("\n[bold]Spotify Music Control:[/bold]")
+        rich_print('    • "authenticate spotify" - First-time setup')
+        rich_print('    • "play some coding music" - Start playback')
+        rich_print('    • "what\'s currently playing?" - Current track info')
+        rich_print('    • "skip this song" - Next track')
+        rich_print('    • "set volume to 70" - Volume control')
+
+        rich_print("\n[bold]Time Tracker:[/bold]")
+        rich_print('    • "start timer for client work" - Begin tracking time')
+        rich_print('    • "log 2h for learning yesterday" - Manual time entry')
+        rich_print('    • "show today\'s time summary" - View daily report')
+        rich_print('    • "list my projects" - See all tracked projects')
+
         rich_print("\n[bold]Keyboard Shortcuts:[/bold]")
         rich_print("  Enter          - Submit (normal mode) / New line (multiline mode)")
         rich_print("  Ctrl+Enter      - Always submit (in any mode)")

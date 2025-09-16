@@ -138,12 +138,24 @@ OPTIMIZED ROUTING LOGIC:
    - Action: Use Memory MCP server - ALWAYS search memory first for user info, then store new information
 
 5. Email & Communication:
-   - Keywords: "email", "send", "inbox", "gmail", "unread", "message", "compose", "meeting", "schedule"
-   - Action: Use Gmail MCP server for email management, sending, and scheduling
+   - Keywords: "email", "send", "inbox", "gmail", "unread", "message", "compose", "reply"
+   - Action: Use Gmail MCP server for email management, sending, and communication
 
-6. GitHub & Repository Management:
+6. Calendar & Scheduling:
+   - Keywords: "meeting", "schedule", "calendar", "appointment", "event", "invite", "book", "available", "busy", "block time"
+   - Action: Use Google Calendar MCP server for scheduling, meetings, and time management
+
+7. GitHub & Repository Management:
    - Keywords: "repo", "repository", "github", "commit", "push", "branch", "issue", "pull request", "PR", "create repo"
    - Action: Use GitHub MCP server for repository creation, file management, and GitHub operations
+
+8. Music Control:
+   - Keywords: "play", "music", "song", "spotify", "skip", "pause", "volume", "track", "artist", "album", "playlist"
+   - Action: Use Spotify MCP server for music playback control, search, and playlist management
+
+9. Time Tracking:
+   - Keywords: "timer", "time", "hours", "log", "track", "start", "stop", "work", "project", "timesheet", "summary"
+   - Action: Use Time Tracker MCP server for work hour logging, timer management, and reporting
 
 PERFORMANCE OPTIMIZATIONS:
 - Concurrent operation handling
@@ -152,7 +164,18 @@ PERFORMANCE OPTIMIZATIONS:
 - Lazy loading of heavy resources
 - Efficient memory usage patterns
 """,
-    servers=["filesystem", "tavily", "terminal", "memory", "gmail", "github", "spring-boot-generator"],
+    servers=[
+        "filesystem",
+        "tavily",
+        "terminal",
+        "memory",
+        "gmail",
+        "google-calendar",
+        "github",
+        "spring-boot-generator",
+        "spotify",
+        "time-tracker",
+    ],
     model="google.gemini-2.0-flash-exp",
     request_params=RequestParams(
         temperature=0.1,  # Lower temperature for faster, more deterministic responses
@@ -301,12 +324,13 @@ async def main():
 
         log_info("Europa starting up", context={"version": __version__, "weather": weather_info})
 
-        if not os.environ.get("TMUX") and not os.environ.get("F1_SPLIT_DISABLED"):
-            log_info("Not in tmux - attempting to create new session")
-            f1_split_result = setup_f1_split_terminal()
-            if f1_split_result:
-                log_info("Successfully created tmux session - exiting current process")
-                return
+        # F1 split disabled - running coordinator only
+        # if not os.environ.get("TMUX") and not os.environ.get("F1_SPLIT_DISABLED"):
+        #     log_info("Not in tmux - attempting to create new session")
+        #     f1_split_result = setup_f1_split_terminal()
+        #     if f1_split_result:
+        #         log_info("Successfully created tmux session - exiting current process")
+        #         return
 
         await startup_tasks()
 

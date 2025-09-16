@@ -2,7 +2,7 @@
 
 import json
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
 
@@ -97,7 +97,7 @@ class LogManager:
         if not json_errors_file.exists():
             return analysis
 
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         try:
             with open(json_errors_file, "r", encoding="utf-8") as f:

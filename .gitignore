@@ -210,3 +210,5 @@ markdown_update_service.py
 modular_performance_generator.py
 gcp-oauth.keys.json
 logs/errors.jsonl
+.spotify_tokens.json
+time_tracker_data.json
