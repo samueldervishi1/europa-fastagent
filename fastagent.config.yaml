@@ -25,15 +25,15 @@ mcp:
           "-y",
           "@modelcontextprotocol/server-filesystem",
           ".",
-          "/home/samuel/Downloads",
-          "/home/samuel/Downloads/java",
-          "/home/samuel/Documents",
-          "/home/samuel/Desktop",
+          "/home/user/Downloads",
+          "/home/user/Downloads/java",
+          "/home/user/Documents",
+          "/home/user/Desktop",
           "/tmp",
         ]
       env:
         # Allow access to common project locations and temp files
-        ALLOW_PATHS: "/home/samuel/Downloads:/home/samuel/Downloads/java:/home/samuel/Documents:/home/samuel/Documents/GitHub:/home/samuel/Desktop:/tmp:."
+        ALLOW_PATHS: "/home/user/Downloads:/home/user/Downloads/java:/home/user/Documents:/home/user/Documents/GitHub:/home/user/Desktop:/tmp:."
         ALLOW_OPERATIONS: "read,write,delete,move,copy,list"
 
     # Tavily AI search server (working package)
@@ -59,7 +59,6 @@ mcp:
       args: ["-y", "@gongrzhe/server-gmail-autoauth-mcp"]
       env: {}
 
-
     # GitHub integration for repository management (using official server)
     github:
       command: npx
@@ -70,7 +69,7 @@ mcp:
       command: python3
       args:
         [
-          "/home/samuel/Documents/GitHub/europa-fastagent/mcp-spring-boot-generator/mcp_spring_boot_generator.py",
+          "/home/user/Documents/GitHub/europa-fastagent/mcp-spring-boot-generator/mcp_spring_boot_generator.py",
         ]
       env: {}
 
@@ -79,7 +78,7 @@ mcp:
       command: python3
       args:
         [
-          "/home/samuel/Documents/GitHub/europa-fastagent/mcp-spotify-controller/mcp_spotify_controller.py",
+          "/home/user/Documents/GitHub/europa-fastagent/mcp-spotify-controller/mcp_spotify_controller.py",
         ]
       env: {}
 
@@ -88,7 +87,7 @@ mcp:
       command: python3
       args:
         [
-          "/home/samuel/Documents/GitHub/europa-fastagent/mcp-time-tracker/mcp_time_tracker.py",
+          "/home/user/Documents/GitHub/europa-fastagent/mcp-time-tracker/mcp_time_tracker.py",
         ]
       env: {}
 
@@ -97,6 +96,6 @@ mcp:
       command: python3
       args:
         [
-          "/home/samuel/Documents/GitHub/europa-fastagent/mcp-google-calendar/mcp_google_calendar.py",
+          "/home/user/Documents/GitHub/europa-fastagent/mcp-google-calendar/mcp_google_calendar.py",
         ]
       env: {}

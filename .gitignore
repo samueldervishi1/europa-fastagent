@@ -212,3 +212,4 @@ gcp-oauth.keys.json
 logs/errors.jsonl
 .spotify_tokens.json
 time_tracker_data.json
+.google_calendar_tokens.json
