@@ -1,6 +1,6 @@
 [project]
 name = "europa"
-version = "0.0.20"
+version = "0.0.25"
 description = "Europa - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 classifiers = [
@@ -41,6 +41,7 @@ dependencies = [
     "requests>=2.32.3",
     "uvloop>=0.21.0",
     "python-dateutil>=2.9.0.post0",
+    "cryptography>=46.0.1",
 ]
 
 [project.optional-dependencies]

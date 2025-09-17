@@ -11,7 +11,6 @@
 # If not specified, defaults to "haiku".
 # Can be overriden with a command line switch --model=<model>, or within the Agent constructor.
 
-#default_model: google.gemini-2.5-pro
 default_model: google.gemini-2.0-flash-exp
 
 # Configuration for Model Context Protocol (MCP) Servers:
@@ -26,14 +25,12 @@ mcp:
           "@modelcontextprotocol/server-filesystem",
           ".",
           "/home/user/Downloads",
-          "/home/user/Downloads/java",
-          "/home/user/Documents",
+          "/home/user/Documents/GitHub",
           "/home/user/Desktop",
-          "/tmp",
         ]
       env:
-        # Allow access to common project locations and temp files
-        ALLOW_PATHS: "/home/user/Downloads:/home/user/Downloads/java:/home/user/Documents:/home/user/Documents/GitHub:/home/user/Desktop:/tmp:."
+        # Restricted access to specific project locations only (removed /tmp for security)
+        ALLOW_PATHS: "/home/user/Downloads:/home/user/Documents/GitHub:/home/user/Desktop:."
         ALLOW_OPERATIONS: "read,write,delete,move,copy,list"
 
     # Tavily AI search server (working package)
@@ -66,36 +63,44 @@ mcp:
 
     # Spring Boot project generator (custom MCP server)
     spring-boot-generator:
-      command: python3
+      command: uv
       args:
         [
+          "run",
+          "python",
           "/home/user/Documents/GitHub/europa-fastagent/mcp-spring-boot-generator/mcp_spring_boot_generator.py",
         ]
       env: {}
 
     # Spotify music controller (custom MCP server)
     spotify:
-      command: python3
+      command: uv
       args:
         [
+          "run",
+          "python",
           "/home/user/Documents/GitHub/europa-fastagent/mcp-spotify-controller/mcp_spotify_controller.py",
         ]
       env: {}
 
     # Time tracker for work hour logging (custom MCP server)
     time-tracker:
-      command: python3
+      command: uv
       args:
         [
+          "run",
+          "python",
           "/home/user/Documents/GitHub/europa-fastagent/mcp-time-tracker/mcp_time_tracker.py",
         ]
       env: {}
 
     # Google Calendar integration (custom MCP server)
     google-calendar:
-      command: python3
+      command: uv
       args:
         [
+          "run",
+          "python",
           "/home/user/Documents/GitHub/europa-fastagent/mcp-google-calendar/mcp_google_calendar.py",
         ]
       env: {}

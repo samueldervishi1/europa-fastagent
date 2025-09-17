@@ -16,29 +16,145 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("Time Tracker")
 
-# Data file for persistent storage
 TIME_DATA_FILE = Path("time_tracker_data.json")
+
+
+def rebuild_date_index(entries: list) -> Dict[str, list]:
+    """Rebuild date index from entries for faster date-based lookups"""
+    date_index = {}
+    for entry in entries:
+        date = entry.get("date")
+        if date:
+            if date not in date_index:
+                date_index[date] = []
+            date_index[date].append(entry["id"])
+    return date_index
+
+
+def update_date_index(data: Dict[str, Any], entry: Dict[str, Any]):
+    """Update date index when adding a new entry"""
+    date = entry.get("date")
+    if date and "date_index" in data:
+        if date not in data["date_index"]:
+            data["date_index"][date] = []
+        data["date_index"][date].append(entry["id"])
+
+
+def get_entries_by_date_range(data: Dict[str, Any], start_date: datetime, end_date: datetime) -> list:
+    """Get entries within date range using index for faster lookup"""
+    if "date_index" not in data or not data["date_index"]:
+        # Fallback to linear search if no index
+        return get_entries_by_date_range_linear(data["entries"], start_date, end_date)
+
+    relevant_entries = []
+    current_date = start_date.date()
+    end_date_only = end_date.date()
+
+    # Use date index to get relevant entry IDs
+    relevant_entry_ids = set()
+    while current_date <= end_date_only:
+        date_str = current_date.strftime("%Y-%m-%d")
+        if date_str in data["date_index"]:
+            relevant_entry_ids.update(data["date_index"][date_str])
+        current_date += timedelta(days=1)
+
+    # Get actual entries and filter by exact time range
+    entries_by_id = {entry["id"]: entry for entry in data["entries"]}
+    for entry_id in relevant_entry_ids:
+        if entry_id in entries_by_id:
+            entry = entries_by_id[entry_id]
+            entry_date = datetime.fromisoformat(entry["start_time"])
+            if start_date <= entry_date <= end_date:
+                relevant_entries.append(entry)
+
+    return relevant_entries
+
+
+def get_entries_by_date_range_linear(entries: list, start_date: datetime, end_date: datetime) -> list:
+    """Fallback linear search for entries within date range"""
+    relevant_entries = []
+    for entry in entries:
+        entry_date = datetime.fromisoformat(entry["start_time"])
+        if start_date <= entry_date <= end_date:
+            relevant_entries.append(entry)
+    return relevant_entries
 
 
 def load_time_data() -> Dict[str, Any]:
     """Load time tracking data from JSON file"""
+    default_data = {
+        "active_timer": None,
+        "entries": [],
+        "projects": [],
+        "categories": ["personal", "client", "learning", "meeting", "other"],
+        "date_index": {},  # New: date -> list of entry IDs for faster lookups
+    }
+
     if not TIME_DATA_FILE.exists():
-        return {"active_timer": None, "entries": [], "projects": [], "categories": ["personal", "client", "learning", "meeting", "other"]}
+        return default_data
 
     try:
         with open(TIME_DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"active_timer": None, "entries": [], "projects": [], "categories": ["personal", "client", "learning", "meeting", "other"]}
+            data = json.load(f)
+
+        if not isinstance(data, dict):
+            print(f"Warning: Invalid data format in {TIME_DATA_FILE}, using defaults")
+            return default_data
+
+        for key in default_data:
+            if key not in data:
+                print(f"Warning: Missing key '{key}' in {TIME_DATA_FILE}, adding default")
+                data[key] = default_data[key]
+
+        # Rebuild date index if missing or incomplete
+        if not data.get("date_index") or len(data["date_index"]) == 0:
+            data["date_index"] = rebuild_date_index(data["entries"])
+
+        return data
+
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse JSON in {TIME_DATA_FILE}: {e}")
+        backup_file = TIME_DATA_FILE.with_suffix(f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        try:
+            TIME_DATA_FILE.rename(backup_file)
+            print(f"Corrupted file backed up to: {backup_file}")
+        except Exception:
+            pass
+        return default_data
+
+    except Exception as e:
+        print(f"Error: Failed to load time data: {e}")
+        return default_data
 
 
 def save_time_data(data: Dict[str, Any]) -> bool:
     """Save time tracking data to JSON file"""
     try:
-        with open(TIME_DATA_FILE, "w", encoding="utf-8") as f:
+        if not isinstance(data, dict):
+            print("Error: Cannot save invalid data format")
+            return False
+
+        if TIME_DATA_FILE.exists():
+            backup_file = TIME_DATA_FILE.with_suffix(".backup")
+            try:
+                import shutil
+
+                shutil.copy2(TIME_DATA_FILE, backup_file)
+            except Exception:
+                pass
+
+        temp_file = TIME_DATA_FILE.with_suffix(".tmp")
+        with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, default=str)
+
+        temp_file.replace(TIME_DATA_FILE)
         return True
-    except Exception:
+
+    except json.JSONEncodeError as e:
+        print(f"Error: Failed to encode data as JSON: {e}")
+        return False
+    except Exception as e:
+        print(f"Error: Failed to save time data: {e}")
         return False
 
 
@@ -46,29 +162,24 @@ def parse_duration_input(duration_str: str) -> Optional[int]:
     """Parse duration input and return minutes"""
     duration_str = duration_str.lower().strip()
 
-    # Handle formats like "2h", "30m", "1h 30m", "90m", "1.5h"
     import re
 
-    # Try "Xh Ym" format
     match = re.match(r"(\d+\.?\d*)h?\s*(\d+)m?", duration_str)
     if match:
         hours = float(match.group(1))
         minutes = int(match.group(2))
         return int(hours * 60 + minutes)
 
-    # Try "Xh" format
     match = re.match(r"(\d+\.?\d*)h", duration_str)
     if match:
         hours = float(match.group(1))
         return int(hours * 60)
 
-    # Try "Ym" format
     match = re.match(r"(\d+)m", duration_str)
     if match:
         minutes = int(match.group(1))
         return minutes
 
-    # Try plain number (assume minutes)
     try:
         return int(float(duration_str))
     except ValueError:
@@ -100,19 +211,16 @@ def get_date_range(period: str) -> tuple[datetime, datetime]:
         start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
         end = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
     elif period == "week":
-        # Current week (Monday to Sunday)
         days_since_monday = now.weekday()
         start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
         end = (start + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
     elif period == "month":
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        # Last day of current month
         if now.month == 12:
             end = now.replace(year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(microseconds=1)
         else:
             end = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(microseconds=1)
     else:
-        # Default to today
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
@@ -134,21 +242,17 @@ async def start_timer(project: str, category: str = "personal", description: str
     """
     data = load_time_data()
 
-    # Stop any existing timer first
     if data["active_timer"]:
         stop_result = await stop_timer()
         if "Error" in stop_result:
             return f"Failed to stop existing timer: {stop_result}"
 
-    # Validate category
     if category not in data["categories"]:
         data["categories"].append(category)
 
-    # Add project to projects list if not exists
     if project not in data["projects"]:
         data["projects"].append(project)
 
-    # Start new timer
     data["active_timer"] = {"project": project, "category": category, "start_time": datetime.now().isoformat(), "description": description}
 
     if save_time_data(data):
@@ -170,7 +274,6 @@ async def stop_timer() -> str:
     if not data["active_timer"]:
         return "No active timer to stop"
 
-    # Calculate duration
     start_time = datetime.fromisoformat(data["active_timer"]["start_time"])
     end_time = datetime.now()
     duration_minutes = int((end_time - start_time).total_seconds() / 60)
@@ -178,7 +281,6 @@ async def stop_timer() -> str:
     if duration_minutes < 1:
         return "Timer stopped (duration less than 1 minute, not saved)"
 
-    # Create entry
     entry = {
         "id": str(uuid.uuid4()),
         "project": data["active_timer"]["project"],
@@ -190,8 +292,8 @@ async def stop_timer() -> str:
         "date": start_time.strftime("%Y-%m-%d"),
     }
 
-    # Add to entries
     data["entries"].append(entry)
+    update_date_index(data, entry)  # Update date index
     data["active_timer"] = None
 
     if save_time_data(data):
@@ -241,7 +343,6 @@ async def log_time(project: str, duration: str, category: str = "personal", desc
     """
     data = load_time_data()
 
-    # Parse duration
     duration_minutes = parse_duration_input(duration)
     if duration_minutes is None:
         return f"Error: Invalid duration format '{duration}'. Use formats like '2h', '90m', '1h 30m'"
@@ -249,7 +350,6 @@ async def log_time(project: str, duration: str, category: str = "personal", desc
     if duration_minutes <= 0:
         return "Error: Duration must be greater than 0"
 
-    # Parse date
     if date:
         try:
             log_date = datetime.strptime(date, "%Y-%m-%d")
@@ -258,20 +358,17 @@ async def log_time(project: str, duration: str, category: str = "personal", desc
     else:
         log_date = datetime.now()
 
-    # Validate category
     if category not in data["categories"]:
         data["categories"].append(category)
 
-    # Add project to projects list if not exists
     if project not in data["projects"]:
         data["projects"].append(project)
 
-    # Create entry
     entry = {
         "id": str(uuid.uuid4()),
         "project": project,
         "category": category,
-        "start_time": log_date.replace(hour=9, minute=0).isoformat(),  # Default start time
+        "start_time": log_date.replace(hour=9, minute=0).isoformat(),
         "end_time": (log_date.replace(hour=9, minute=0) + timedelta(minutes=duration_minutes)).isoformat(),
         "duration_minutes": duration_minutes,
         "description": description,
@@ -280,6 +377,7 @@ async def log_time(project: str, duration: str, category: str = "personal", desc
     }
 
     data["entries"].append(entry)
+    update_date_index(data, entry)  # Update date index
 
     if save_time_data(data):
         return f"Logged {format_duration(duration_minutes)} for '{project}' on {log_date.strftime('%Y-%m-%d')}"
@@ -302,20 +400,14 @@ async def get_time_summary(period: str = "today") -> str:
 
     start_date, end_date = get_date_range(period)
 
-    # Filter entries in date range
-    relevant_entries = []
-    for entry in data["entries"]:
-        entry_date = datetime.fromisoformat(entry["start_time"])
-        if start_date <= entry_date <= end_date:
-            relevant_entries.append(entry)
+    # Use optimized date range search
+    relevant_entries = get_entries_by_date_range(data, start_date, end_date)
 
     if not relevant_entries:
         return f"No time entries found for {period}"
 
-    # Calculate totals
     total_minutes = sum(entry["duration_minutes"] for entry in relevant_entries)
 
-    # Group by project
     project_totals = {}
     category_totals = {}
 
@@ -327,7 +419,6 @@ async def get_time_summary(period: str = "today") -> str:
         project_totals[project] = project_totals.get(project, 0) + duration
         category_totals[category] = category_totals.get(category, 0) + duration
 
-    # Build summary
     period_title = period.title()
     if period == "today":
         period_title = f"Today ({datetime.now().strftime('%Y-%m-%d')})"
@@ -365,7 +456,6 @@ async def list_projects() -> str:
     if not data["entries"]:
         return "No projects found. Start logging time to see projects here."
 
-    # Calculate project totals
     project_totals = {}
     for entry in data["entries"]:
         project = entry["project"]
@@ -397,7 +487,6 @@ async def get_recent_entries(count: int = 5) -> str:
     if not data["entries"]:
         return "No time entries found"
 
-    # Sort by start time (most recent first)
     sorted_entries = sorted(data["entries"], key=lambda x: x["start_time"], reverse=True)
     recent_entries = sorted_entries[:count]
 
@@ -431,11 +520,9 @@ async def delete_last_entry() -> str:
     if not data["entries"]:
         return "No entries to delete"
 
-    # Find most recent entry
     sorted_entries = sorted(data["entries"], key=lambda x: x["start_time"], reverse=True)
     last_entry = sorted_entries[0]
 
-    # Remove it
     data["entries"] = [e for e in data["entries"] if e["id"] != last_entry["id"]]
 
     if save_time_data(data):

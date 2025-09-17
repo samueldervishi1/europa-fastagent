@@ -9,7 +9,9 @@ Requires Spotify Premium account and developer app credentials.
 import base64
 import http.server
 import json
+import os
 import socketserver
+import sys
 import threading
 import time
 import webbrowser
@@ -22,6 +24,24 @@ import requests
 import yaml
 from mcp.server.fastmcp import FastMCP
 
+# Add parent directory to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+try:
+    from src.mcp_agent.utils.request_cache import cached_request, get_pooled_session
+
+    CACHING_AVAILABLE = True
+except ImportError:
+    print("Warning: Request caching not available - falling back to direct requests")
+    CACHING_AVAILABLE = False
+
+try:
+    from cryptography.fernet import Fernet
+
+    ENCRYPTION_AVAILABLE = True
+except ImportError:
+    ENCRYPTION_AVAILABLE = False
+
 mcp = FastMCP("Spotify Controller")
 
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -32,6 +52,7 @@ _access_token: Optional[str] = None
 _refresh_token: Optional[str] = None
 _token_expires_at: Optional[datetime] = None
 _credentials: Optional[Dict[str, str]] = None
+_encryption_key: Optional[bytes] = None
 
 
 class CallbackHandler(http.server.SimpleHTTPRequestHandler):
@@ -95,6 +116,62 @@ def load_credentials() -> Dict[str, str]:
         raise Exception(f"Failed to load Spotify credentials: {e}")
 
 
+def _get_encryption_key() -> bytes:
+    """Get or create encryption key for token storage"""
+    global _encryption_key
+
+    if not ENCRYPTION_AVAILABLE:
+        return b"dummy_key"
+
+    if _encryption_key:
+        return _encryption_key
+
+    key_file = Path(".spotify_key")
+    if key_file.exists():
+        try:
+            with open(key_file, "rb") as f:
+                _encryption_key = f.read()
+                return _encryption_key
+        except Exception:
+            pass
+
+    try:
+        _encryption_key = Fernet.generate_key()
+        with open(key_file, "wb") as f:
+            f.write(_encryption_key)
+        os.chmod(key_file, 0o600)
+    except Exception:
+        _encryption_key = Fernet.generate_key()
+
+    return _encryption_key
+
+
+def _encrypt_data(data: str) -> str:
+    """Encrypt sensitive data"""
+    if not ENCRYPTION_AVAILABLE:
+        return data
+
+    try:
+        key = _get_encryption_key()
+        f = Fernet(key)
+        return f.encrypt(data.encode()).decode()
+    except Exception:
+        return data
+
+
+def _decrypt_data(encrypted_data: str) -> str:
+    """Decrypt sensitive data"""
+    if not ENCRYPTION_AVAILABLE:
+        return encrypted_data
+
+    try:
+        key = _get_encryption_key()
+        f = Fernet(key)
+        return f.decrypt(encrypted_data.encode()).decode()
+    except Exception:
+        return encrypted_data
+
+
 def save_tokens(access_token: str, refresh_token: str, expires_in: int):
     """Save tokens to a local cache file"""
     global _access_token, _refresh_token, _token_expires_at
@@ -103,12 +180,17 @@ def save_tokens(access_token: str, refresh_token: str, expires_in: int):
     _refresh_token = refresh_token
     _token_expires_at = datetime.now() + timedelta(seconds=expires_in - 60)
 
-    token_data = {"access_token": access_token, "refresh_token": refresh_token, "expires_at": _token_expires_at.isoformat()}
+    token_data = {
+        "access_token": _encrypt_data(access_token),
+        "refresh_token": _encrypt_data(refresh_token),
+        "expires_at": _token_expires_at.isoformat(),
+    }
 
     token_file = Path(".spotify_tokens.json")
     try:
         with open(token_file, "w") as f:
             json.dump(token_data, f)
+        os.chmod(token_file, 0o600)
     except Exception:
         pass
 
@@ -125,8 +207,8 @@ def load_cached_tokens() -> bool:
         with open(token_file, "r") as f:
             token_data = json.load(f)
 
-        _access_token = token_data.get("access_token")
-        _refresh_token = token_data.get("refresh_token")
+        _access_token = _decrypt_data(token_data.get("access_token", ""))
+        _refresh_token = _decrypt_data(token_data.get("refresh_token", ""))
         expires_at_str = token_data.get("expires_at")
 
         if expires_at_str:
@@ -190,7 +272,7 @@ def get_valid_token() -> Optional[str]:
 
 
 def spotify_request(method: str, endpoint: str, **kwargs) -> requests.Response:
-    """Make authenticated request to Spotify API"""
+    """Make authenticated request to Spotify API with caching"""
     token = get_valid_token()
     if not token:
         raise Exception("No valid Spotify access token. Please authenticate first using 'authenticate_spotify'.")
@@ -200,13 +282,28 @@ def spotify_request(method: str, endpoint: str, **kwargs) -> requests.Response:
     kwargs["headers"] = headers
 
     url = f"{SPOTIFY_API_BASE}/{endpoint.lstrip('/')}"
-    response = requests.request(method, url, timeout=10, **kwargs)
+
+    # Use cached request for GET operations, cache for 1 minute
+    if CACHING_AVAILABLE and method.upper() == "GET":
+        response = cached_request(method, url, ttl=60, timeout=10, **kwargs)
+    elif CACHING_AVAILABLE:
+        # Use pooled session for non-cached requests
+        session = get_pooled_session()
+        response = session.request(method, url, timeout=10, **kwargs)
+    else:
+        response = requests.request(method, url, timeout=10, **kwargs)
 
     if response.status_code == 401:
         if refresh_access_token():
             token = get_valid_token()
             headers["Authorization"] = f"Bearer {token}"
-            response = requests.request(method, url, timeout=10, **kwargs)
+            if CACHING_AVAILABLE and method.upper() == "GET":
+                response = cached_request(method, url, ttl=60, timeout=10, **kwargs)
+            elif CACHING_AVAILABLE:
+                session = get_pooled_session()
+                response = session.request(method, url, timeout=10, **kwargs)
+            else:
+                response = requests.request(method, url, timeout=10, **kwargs)
 
     return response
 
@@ -267,8 +364,24 @@ async def authenticate_spotify() -> str:
 
             try:
                 webbrowser.open(auth_url)
-            except Exception:
-                subprocess.run(["xdg-open", auth_url], check=False)
+                print("Opened browser for Spotify authentication")
+            except Exception as browser_error:
+                print(f"Browser module failed: {browser_error}")
+                print("Trying xdg-open...")
+                try:
+                    subprocess.run(["xdg-open", auth_url], check=True, capture_output=True, text=True, timeout=10)
+                    print("Successfully opened browser with xdg-open")
+                except subprocess.CalledProcessError as e:
+                    print(f"xdg-open failed with exit code {e.returncode}")
+                    if e.stderr:
+                        print(f"Error output: {e.stderr}")
+                    print(f"Please manually open: {auth_url}")
+                except subprocess.TimeoutExpired:
+                    print("xdg-open timed out - browser may have opened")
+                    print(f"If browser didn't open, please manually open: {auth_url}")
+                except FileNotFoundError:
+                    print("xdg-open not found on system")
+                    print(f"Please manually open: {auth_url}")
         except Exception as e:
             print(f"Failed to open browser: {e}")
             print(f"Please manually open: {auth_url}")

@@ -6,7 +6,9 @@ This server provides tools to generate Spring Boot projects using the Spring Ini
 """
 
 import json
+import re
 import subprocess
+import sys
 import zipfile
 from io import BytesIO
 from pathlib import Path
@@ -16,10 +18,49 @@ import requests
 import yaml
 from mcp.server.fastmcp import FastMCP
 
+# Add parent directory to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+try:
+    from src.mcp_agent.utils.request_cache import cached_request
+
+    CACHING_AVAILABLE = True
+except ImportError:
+    print("Warning: Request caching not available - falling back to direct requests")
+    CACHING_AVAILABLE = False
+
 mcp = FastMCP("Spring Boot Generator")
 INITIALIZR_BASE_URL = "https://start.spring.io"
 METADATA_URL = f"{INITIALIZR_BASE_URL}/metadata/client"
 _metadata_cache: Optional[Dict[str, Any]] = None
+
+
+def _validate_safe_path(path: str) -> bool:
+    """Validate that a path is safe and doesn't contain dangerous characters."""
+    safe_pattern = re.compile(r"^[a-zA-Z0-9._/-]+$")
+    if not safe_pattern.match(path):
+        return False
+
+    if ".." in path or path.startswith("/"):
+        return False
+
+    return True
+
+
+def _validate_safe_name(name: str) -> bool:
+    """Validate that a project name is safe."""
+    safe_pattern = re.compile(r"^[a-zA-Z0-9_-]+$")
+    return bool(safe_pattern.match(name)) and len(name) <= 100
+
+
+def _sanitize_command_args(args: List[str]) -> List[str]:
+    """Sanitize command arguments to prevent injection."""
+    sanitized = []
+    for arg in args:
+        if re.search(r"[;&|`$(){}[\]<>]", arg):
+            continue
+        sanitized.append(arg)
+    return sanitized
 
 
 async def get_initializr_metadata() -> Dict[str, Any]:
@@ -28,7 +69,11 @@ async def get_initializr_metadata() -> Dict[str, Any]:
 
     if _metadata_cache is None:
         try:
-            response = requests.get(METADATA_URL, timeout=10)
+            if CACHING_AVAILABLE:
+                # Cache metadata for 1 hour
+                response = cached_request("GET", METADATA_URL, ttl=3600, timeout=10)
+            else:
+                response = requests.get(METADATA_URL, timeout=10)
             response.raise_for_status()
             _metadata_cache = response.json()
         except requests.RequestException as e:
@@ -139,12 +184,23 @@ async def generate_spring_boot_from_openapi(openapi_yaml_path: str, output_dir: 
         Success message with project location
     """
     try:
+        if not _validate_safe_path(openapi_yaml_path):
+            return "Error: Invalid OpenAPI YAML path - contains unsafe characters"
+
+        if not _validate_safe_path(output_dir):
+            return "Error: Invalid output directory path - contains unsafe characters"
+
         project_info = extract_project_info_from_openapi(openapi_yaml_path)
 
         if override_name:
+            if not _validate_safe_name(override_name):
+                return "Error: Invalid override name - contains unsafe characters"
             project_info["name"] = override_name
 
         project_name = project_info["name"]
+        if not _validate_safe_name(project_name):
+            return "Error: Invalid project name - contains unsafe characters"
+
         output_path = Path(output_dir).resolve()
         project_path = output_path / project_name
 
@@ -152,10 +208,12 @@ async def generate_spring_boot_from_openapi(openapi_yaml_path: str, output_dir: 
             return f"Error: Directory '{project_path}' already exists"
 
         try:
-            subprocess.run(["which", "openapi-generator-cli"], check=True, capture_output=True)
+            subprocess.run(["which", "openapi-generator-cli"], check=True, capture_output=True, timeout=30)
         except subprocess.CalledProcessError:
             try:
-                subprocess.run(["npm", "install", "-g", "@openapitools/openapi-generator-cli"], check=True, capture_output=True)
+                subprocess.run(
+                    ["npm", "install", "-g", "@openapitools/openapi-generator-cli"], check=True, capture_output=True, timeout=120
+                )
             except subprocess.CalledProcessError:
                 return "Error: Could not install OpenAPI Generator. Please install manually: npm install -g @openapitools/openapi-generator-cli"
 
@@ -180,7 +238,11 @@ async def generate_spring_boot_from_openapi(openapi_yaml_path: str, output_dir: 
             "useTags=true",
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        sanitized_cmd = _sanitize_command_args(cmd)
+        if len(sanitized_cmd) != len(cmd):
+            return "Error: Command contains unsafe characters"
+
+        result = subprocess.run(sanitized_cmd, capture_output=True, text=True, timeout=120)
 
         if result.returncode != 0:
             return f"OpenAPI Generator failed: {result.stderr}"
@@ -443,7 +505,10 @@ async def create_spring_boot_project(
 
     try:
         download_url = f"{INITIALIZR_BASE_URL}/starter.zip"
-        response = requests.get(download_url, params=params, timeout=30)
+        if CACHING_AVAILABLE:
+            response = cached_request("GET", download_url, ttl=300, params=params, timeout=30)
+        else:
+            response = requests.get(download_url, params=params, timeout=30)
         response.raise_for_status()
 
         with zipfile.ZipFile(BytesIO(response.content)) as zip_file:

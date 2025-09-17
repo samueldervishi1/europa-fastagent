@@ -107,7 +107,20 @@ class PersistentLogger:
         self.app_logger.info("=" * 80)
         self.app_logger.info("Python: %s", os.sys.version)
         self.app_logger.info("Working Directory: %s", os.getcwd())
-        self.app_logger.info("Environment: %s", dict(os.environ))
+
+        # Log only essential environment variables to prevent memory leaks
+        essential_env = {
+            "PATH": os.environ.get("PATH", "")[:200],  # Truncate long PATH
+            "HOME": os.environ.get("HOME", ""),
+            "USER": os.environ.get("USER", ""),
+            "SHELL": os.environ.get("SHELL", ""),
+            "TERM": os.environ.get("TERM", ""),
+            "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
+            "VIRTUAL_ENV": os.environ.get("VIRTUAL_ENV", ""),
+        }
+        # Remove empty values
+        essential_env = {k: v for k, v in essential_env.items() if v}
+        self.app_logger.info("Essential Environment: %s", essential_env)
 
     def log_error(self, message: str, exception: Optional[Exception] = None, context: Optional[Dict[str, Any]] = None):
         """Log an error with full context"""

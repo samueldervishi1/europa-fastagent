@@ -83,7 +83,7 @@ def format_weather_info(location: dict, weather_data: dict) -> str:
         condition = current["weatherDesc"][0]["value"]
         emoji = get_weather_emoji(condition)
 
-        return f"{location['city']}, {location['country']} {temp}°C {emoji} {condition}"
+        return f"{location['city']}, {location['country']} {temp}°C {emoji}  {condition}"
     except Exception:
         return f"{location['city']}, {location['country']} Weather unavailable"
 

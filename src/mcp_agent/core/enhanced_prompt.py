@@ -625,7 +625,7 @@ async def handle_special_commands(command, agent_app=None):
         return True
 
     elif isinstance(command, str) and command.upper() == "EXIT":
-        raise PromptExitError("User requested to exit fast-agent session")
+        raise PromptExitError("User requested to exit europa fast-agent session")
 
     elif command == "LIST_AGENTS":
         if available_agents:

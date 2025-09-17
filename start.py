@@ -5,9 +5,8 @@ import logging
 import os
 import subprocess
 import sys
-from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import yaml
 
@@ -51,6 +50,9 @@ except ImportError as e:
 
 
 try:
+    import importlib.util
+    import shutil
+
     from mcp_agent.core.fastagent import FastAgent
     from mcp_agent.core.request_params import RequestParams
     from version import __version__
@@ -85,30 +87,200 @@ Usage:
 class ConfigManager:
     _instance = None
     _config_cache: Dict[str, Any] = {}
+    _secrets_cache: Optional[Dict[str, Any]] = None
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    @lru_cache(maxsize=1)
     def get_secrets(self) -> Dict[str, Any]:
+        if self._secrets_cache is not None:
+            return self._secrets_cache
+
         secrets_file = Path("fastagent.secrets.yaml")
         if not secrets_file.exists():
             log_warning("No fastagent.secrets.yaml found - some features may not work")
-            return {}
+            self._secrets_cache = {}
+            return self._secrets_cache
 
         try:
+            stat_info = secrets_file.stat()
+            if stat_info.st_mode & 0o077:
+                log_warning("Secrets file has unsafe permissions - should be 600")
+
             with open(secrets_file, "r", encoding="utf-8") as f:
                 secrets = yaml.safe_load(f) or {}
-                log_info("Successfully loaded secrets configuration")
-                return secrets
+
+                if not isinstance(secrets, dict):
+                    log_error("Invalid secrets file format - must be a YAML dictionary")
+                    return {}
+
+                cleaned_secrets = {}
+                for key, value in secrets.items():
+                    if value is not None and value != "":
+                        cleaned_secrets[key] = value
+
+                log_info("Successfully loaded secrets configuration", context={"keys_count": len(cleaned_secrets)})
+                self._secrets_cache = cleaned_secrets
+                return self._secrets_cache
+
+        except yaml.YAMLError as e:
+            log_error("Failed to parse YAML secrets file", exception=e, context={"file": str(secrets_file)})
+            self._secrets_cache = {}
+            return self._secrets_cache
         except Exception as e:
             log_error("Failed to load secrets file", exception=e, context={"file": str(secrets_file)})
-            return {}
+            self._secrets_cache = {}
+            return self._secrets_cache
 
 
 config_manager = ConfigManager()
+
+
+def validate_mcp_dependencies() -> Dict[str, Dict[str, bool]]:
+    """Validate dependencies for MCP servers and return status."""
+    dependencies = {
+        "spotify": {
+            "cryptography": True,
+            "requests": True,
+            "yaml": True,
+        },
+        "google-calendar": {
+            "cryptography": True,
+            "requests": True,
+            "yaml": True,
+            "dateutil": bool(importlib.util.find_spec("dateutil")),
+        },
+        "spring-boot-generator": {
+            "requests": True,
+            "yaml": True,
+            "openapi-generator-cli": bool(shutil.which("openapi-generator-cli")),
+            "npm": bool(shutil.which("npm")),
+        },
+        "time-tracker": {
+            "json": True,
+            "uuid": True,
+            "datetime": True,
+        },
+        "terminal": {
+            "uvx": bool(shutil.which("uvx")) or bool(shutil.which("uv")),
+        },
+        "memory": {
+            "npm": bool(shutil.which("npm")),
+        },
+        "tavily": {
+            "npm": bool(shutil.which("npm")),
+        },
+        "gmail": {
+            "npm": bool(shutil.which("npm")),
+        },
+        "github": {
+            "npm": bool(shutil.which("npm")),
+        },
+        "filesystem": {
+            "npm": bool(shutil.which("npm")),
+        },
+    }
+
+    for server, deps in dependencies.items():
+        for dep, status in list(deps.items()):
+            if dep in ["cryptography", "requests", "yaml", "dateutil"]:
+                if dep == "yaml":
+                    deps[dep] = bool(importlib.util.find_spec("yaml"))
+                elif dep == "requests":
+                    deps[dep] = bool(importlib.util.find_spec("requests"))
+
+    return dependencies
+
+
+def validate_config_structure() -> bool:
+    """Validate the structure of fastagent.config.yaml"""
+    config_file = Path("fastagent.config.yaml")
+    if not config_file.exists():
+        log_warning("Configuration file fastagent.config.yaml not found")
+        return False
+
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+
+        if not isinstance(config, dict):
+            log_error("Configuration file must contain a YAML dictionary")
+            return False
+
+        required_fields = ["default_model", "mcp"]
+        for field in required_fields:
+            if field not in config:
+                log_warning(f"Missing required configuration field: {field}")
+
+        if "default_model" in config:
+            model = config["default_model"]
+            if not isinstance(model, str) or not model.strip():
+                log_warning("default_model should be a non-empty string")
+
+        if "mcp" in config:
+            mcp_config = config["mcp"]
+            if not isinstance(mcp_config, dict):
+                log_error("mcp section must be a dictionary")
+                return False
+
+            if "servers" in mcp_config:
+                servers = mcp_config["servers"]
+                if not isinstance(servers, dict):
+                    log_error("mcp.servers must be a dictionary")
+                    return False
+
+                for server_name, server_config in servers.items():
+                    if not isinstance(server_config, dict):
+                        log_warning(f"Server '{server_name}' configuration must be a dictionary")
+                        continue
+
+                    if "command" not in server_config:
+                        log_warning(f"Server '{server_name}' missing required 'command' field")
+
+                    if "args" not in server_config:
+                        log_warning(f"Server '{server_name}' missing 'args' field")
+
+                    if "args" in server_config and not isinstance(server_config["args"], list):
+                        log_warning(f"Server '{server_name}' args must be a list")
+
+        log_info("Configuration validation completed")
+        return True
+
+    except yaml.YAMLError as e:
+        log_error("Configuration file contains invalid YAML", exception=e)
+        return False
+    except Exception as e:
+        log_error("Failed to validate configuration file", exception=e)
+        return False
+
+
+def log_dependency_status():
+    """Log the status of MCP server dependencies."""
+    deps = validate_mcp_dependencies()
+
+    missing_deps = []
+    warnings = []
+
+    for server, server_deps in deps.items():
+        missing = [dep for dep, available in server_deps.items() if not available]
+        if missing:
+            missing_deps.append(f"{server}: {', '.join(missing)}")
+
+            if server == "spring-boot-generator" and "openapi-generator-cli" in missing:
+                warnings.append("Spring Boot Generator may fail - install with: npm install -g @openapitools/openapi-generator-cli")
+
+            if server == "google-calendar" and "dateutil" in missing:
+                warnings.append("Google Calendar date parsing will be limited - install with: pip install python-dateutil")
+
+    if missing_deps:
+        log_warning("Some MCP servers have missing dependencies", context={"missing": missing_deps})
+        for warning in warnings:
+            log_warning(warning)
+    else:
+        log_info("All MCP server dependencies are available")
+
 
 fast = FastAgent("Europa")
 
@@ -271,18 +443,51 @@ def setup_f1_split_terminal():
             return False
 
 
+async def async_validate_config_structure():
+    """Async wrapper for config validation"""
+    return validate_config_structure()
+
+
+async def async_log_dependency_status():
+    """Async wrapper for dependency validation"""
+    return log_dependency_status()
+
+
 @catch_and_log(shutdown_on_error=False)
 async def startup_tasks():
     """Perform startup tasks with error handling"""
-    tasks = []
-
     log_info("Starting Europa startup tasks")
 
-    try:
-        log_manager.rotate_logs(max_age_days=7, max_size_mb=50)
-        log_info("Log rotation completed")
-    except Exception as e:
-        log_warning("Log rotation failed", context={"error": str(e)})
+    # Run validation tasks concurrently
+    validation_tasks = [
+        asyncio.create_task(async_validate_config_structure()),
+        asyncio.create_task(async_log_dependency_status()),
+    ]
+
+    # Execute validation tasks concurrently
+    validation_results = await asyncio.gather(*validation_tasks, return_exceptions=True)
+
+    # Process results
+    for i, result in enumerate(validation_results):
+        task_name = ["config_validation", "dependency_validation"][i]
+        if isinstance(result, Exception):
+            log_warning(f"{task_name} failed", context={"error": str(result)})
+        else:
+            log_info(f"{task_name} completed successfully")
+
+    # Add log rotation to async tasks
+    async def async_log_rotation():
+        """Async wrapper for log rotation"""
+        try:
+            log_manager.rotate_logs(max_age_days=1, max_size_mb=50)
+            log_info("Log rotation completed")
+            return True
+        except Exception as e:
+            log_warning("Log rotation failed", context={"error": str(e)})
+            return False
+
+    # Run log rotation concurrently with other tasks
+    maintenance_tasks = [asyncio.create_task(async_log_rotation())]
 
     if os.environ.get("TMUX") and not os.environ.get("F1_SPLIT_CREATED"):
         try:
@@ -300,15 +505,17 @@ async def startup_tasks():
     elif os.environ.get("F1_SPLIT_CREATED"):
         log_info("F1 split already created in previous session")
 
-    if tasks:
-        log_info(f"Running {len(tasks)} startup tasks")
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Run maintenance tasks concurrently
+    if maintenance_tasks:
+        log_info(f"Running {len(maintenance_tasks)} maintenance tasks")
+        maintenance_results = await asyncio.gather(*maintenance_tasks, return_exceptions=True)
 
-        for i, result in enumerate(results):
+        for i, result in enumerate(maintenance_results):
+            task_name = ["log_rotation"][i]
             if isinstance(result, Exception):
-                log_error(f"Startup task {i} failed", exception=result)
+                log_error(f"Maintenance task {task_name} failed", exception=result)
             else:
-                log_info(f"Startup task {i} completed successfully")
+                log_info(f"Maintenance task {task_name} completed successfully")
 
     log_info("Startup tasks completed")
 

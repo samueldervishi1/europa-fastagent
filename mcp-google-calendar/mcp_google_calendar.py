@@ -7,6 +7,8 @@ Uses OAuth 2.0 for secure authentication with Google Calendar API.
 """
 
 import json
+import os
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional
@@ -15,6 +17,24 @@ from urllib.parse import urlencode
 import requests
 import yaml
 from mcp.server.fastmcp import FastMCP
+
+# Add parent directory to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+try:
+    from src.mcp_agent.utils.request_cache import cached_request, get_pooled_session
+
+    CACHING_AVAILABLE = True
+except ImportError:
+    print("Warning: Request caching not available - falling back to direct requests")
+    CACHING_AVAILABLE = False
+
+try:
+    from cryptography.fernet import Fernet
+
+    ENCRYPTION_AVAILABLE = True
+except ImportError:
+    ENCRYPTION_AVAILABLE = False
 
 try:
     from dateutil import parser as dateutil_parser
@@ -33,6 +53,7 @@ _access_token: Optional[str] = None
 _refresh_token: Optional[str] = None
 _token_expires_at: Optional[datetime] = None
 _credentials: Optional[Dict[str, str]] = None
+_encryption_key: Optional[bytes] = None
 
 
 def load_credentials() -> Dict[str, str]:
@@ -60,24 +81,18 @@ def load_credentials() -> Dict[str, str]:
         except Exception:
             pass
 
-    # Try GCP OAuth keys file
     gcp_file = Path("gcp-oauth.keys.json")
     if gcp_file.exists():
         try:
             with open(gcp_file, "r", encoding="utf-8") as f:
                 gcp_data = json.load(f)
 
-            # Extract credentials from GCP format
             if "web" in gcp_data or "installed" in gcp_data:
                 key = "web" if "web" in gcp_data else "installed"
                 gcp_creds = gcp_data[key]
 
-                # Use the first redirect URI from GCP file, or default to localhost
                 redirect_uris = gcp_creds.get("redirect_uris", ["http://localhost"])
                 redirect_uri = redirect_uris[0] if redirect_uris else "http://localhost"
-
-                # Keep the redirect URI exactly as specified in GCP credentials
-                # Don't modify it - Google needs exact match
 
                 _credentials = {
                     "client_id": gcp_creds.get("client_id"),
@@ -93,6 +108,62 @@ def load_credentials() -> Dict[str, str]:
     )
 
 
+def _get_encryption_key() -> bytes:
+    """Get or create encryption key for token storage"""
+    global _encryption_key
+
+    if not ENCRYPTION_AVAILABLE:
+        return b"dummy_key"
+
+    if _encryption_key:
+        return _encryption_key
+
+    key_file = Path(".google_calendar_key")
+    if key_file.exists():
+        try:
+            with open(key_file, "rb") as f:
+                _encryption_key = f.read()
+                return _encryption_key
+        except Exception:
+            pass
+
+    try:
+        _encryption_key = Fernet.generate_key()
+        with open(key_file, "wb") as f:
+            f.write(_encryption_key)
+        os.chmod(key_file, 0o600)
+    except Exception:
+        _encryption_key = Fernet.generate_key()
+
+    return _encryption_key
+
+
+def _encrypt_data(data: str) -> str:
+    """Encrypt sensitive data"""
+    if not ENCRYPTION_AVAILABLE:
+        return data
+
+    try:
+        key = _get_encryption_key()
+        f = Fernet(key)
+        return f.encrypt(data.encode()).decode()
+    except Exception:
+        return data
+
+
+def _decrypt_data(encrypted_data: str) -> str:
+    """Decrypt sensitive data"""
+    if not ENCRYPTION_AVAILABLE:
+        return encrypted_data
+
+    try:
+        key = _get_encryption_key()
+        f = Fernet(key)
+        return f.decrypt(encrypted_data.encode()).decode()
+    except Exception:
+        return encrypted_data
+
+
 def save_tokens(access_token: str, refresh_token: str, expires_in: int):
     """Save tokens to a local cache file"""
     global _access_token, _refresh_token, _token_expires_at
@@ -101,12 +172,18 @@ def save_tokens(access_token: str, refresh_token: str, expires_in: int):
     _refresh_token = refresh_token
     _token_expires_at = datetime.now() + timedelta(seconds=expires_in - 60)  # 60s buffer
 
-    token_data = {"access_token": access_token, "refresh_token": refresh_token, "expires_at": _token_expires_at.isoformat()}
+    token_data = {
+        "access_token": _encrypt_data(access_token),
+        "refresh_token": _encrypt_data(refresh_token),
+        "expires_at": _token_expires_at.isoformat(),
+    }
 
     token_file = Path(".google_calendar_tokens.json")
     try:
         with open(token_file, "w") as f:
             json.dump(token_data, f)
+        # Secure file permissions
+        os.chmod(token_file, 0o600)
     except Exception:
         pass
 
@@ -123,8 +200,8 @@ def load_cached_tokens() -> bool:
         with open(token_file, "r") as f:
             token_data = json.load(f)
 
-        _access_token = token_data.get("access_token")
-        _refresh_token = token_data.get("refresh_token")
+        _access_token = _decrypt_data(token_data.get("access_token", ""))
+        _refresh_token = _decrypt_data(token_data.get("refresh_token", ""))
         expires_at_str = token_data.get("expires_at")
 
         if expires_at_str:
@@ -190,7 +267,7 @@ def get_valid_token() -> Optional[str]:
 
 
 def calendar_request(method: str, endpoint: str, **kwargs) -> requests.Response:
-    """Make authenticated request to Google Calendar API"""
+    """Make authenticated request to Google Calendar API with caching"""
     token = get_valid_token()
     if not token:
         raise Exception("No valid Google Calendar access token. Please authenticate first using 'authenticate_google_calendar'.")
@@ -201,13 +278,28 @@ def calendar_request(method: str, endpoint: str, **kwargs) -> requests.Response:
     kwargs["headers"] = headers
 
     url = f"{GOOGLE_CALENDAR_API_BASE}/{endpoint.lstrip('/')}"
-    response = requests.request(method, url, timeout=15, **kwargs)
+
+    # Use cached request for GET operations, cache for 2 minutes
+    if CACHING_AVAILABLE and method.upper() == "GET":
+        response = cached_request(method, url, ttl=120, timeout=15, **kwargs)
+    elif CACHING_AVAILABLE:
+        # Use pooled session for non-cached requests
+        session = get_pooled_session()
+        response = session.request(method, url, timeout=15, **kwargs)
+    else:
+        response = requests.request(method, url, timeout=15, **kwargs)
 
     if response.status_code == 401:
         if refresh_access_token():
             token = get_valid_token()
             headers["Authorization"] = f"Bearer {token}"
-            response = requests.request(method, url, timeout=15, **kwargs)
+            if CACHING_AVAILABLE and method.upper() == "GET":
+                response = cached_request(method, url, ttl=120, timeout=15, **kwargs)
+            elif CACHING_AVAILABLE:
+                session = get_pooled_session()
+                response = session.request(method, url, timeout=15, **kwargs)
+            else:
+                response = requests.request(method, url, timeout=15, **kwargs)
 
     return response
 
@@ -216,12 +308,7 @@ def parse_datetime_input(datetime_str: str) -> Optional[str]:
     """Parse various datetime formats into ISO format for Google Calendar API"""
     import re
 
-    if not DATEUTIL_AVAILABLE:
-        # Fallback for basic parsing without dateutil
-        pass
-
     try:
-        # Handle relative terms like "tomorrow", "today"
         now = datetime.now()
 
         if "tomorrow" in datetime_str.lower():
@@ -258,11 +345,35 @@ def parse_datetime_input(datetime_str: str) -> Optional[str]:
                 result_dt = now.replace(hour=9, minute=0, second=0, microsecond=0)
 
         else:
-            # Try to parse with dateutil
             if DATEUTIL_AVAILABLE:
                 result_dt = dateutil_parser.parse(datetime_str)
             else:
-                return None
+                iso_match = re.match(r"(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}))?", datetime_str)
+                if iso_match:
+                    year = int(iso_match.group(1))
+                    month = int(iso_match.group(2))
+                    day = int(iso_match.group(3))
+                    hour = int(iso_match.group(4)) if iso_match.group(4) else 9
+                    minute = int(iso_match.group(5)) if iso_match.group(5) else 0
+
+                    try:
+                        result_dt = datetime(year, month, day, hour, minute)
+                    except ValueError:
+                        return None
+                else:
+                    time_only_match = re.match(r"(\d{1,2}):(\d{2})\s*(am|pm)?", datetime_str, re.IGNORECASE)
+                    if time_only_match:
+                        hour = int(time_only_match.group(1))
+                        minute = int(time_only_match.group(2))
+                        ampm = time_only_match.group(3).lower() if time_only_match.group(3) else None
+
+                        if ampm == "pm" and hour != 12:
+                            hour += 12
+                        elif ampm == "am" and hour == 12:
+                            hour = 0
+                        result_dt = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    else:
+                        return None
 
         return result_dt.isoformat()
 
@@ -287,7 +398,6 @@ async def authenticate_google_calendar() -> str:
     if load_cached_tokens():
         return "Already authenticated with Google Calendar! You can now manage your calendar."
 
-    # Generate the auth URL for manual authentication
     scopes = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events"]
 
     auth_params = {
@@ -388,13 +498,12 @@ async def create_calendar_event(
             "summary": title,
             "start": {
                 "dateTime": start_dt.isoformat(),
-                "timeZone": "America/New_York",  # You might want to make this configurable
+                "timeZone": "America/New_York",
             },
             "end": {"dateTime": end_dt.isoformat(), "timeZone": "America/New_York"},
             "description": description,
         }
 
-        # Add attendees if provided
         if attendees.strip():
             attendee_emails = [email.strip() for email in attendees.split(",")]
             event_data["attendees"] = [{"email": email} for email in attendee_emails if email]
@@ -488,7 +597,6 @@ async def check_availability(date: str, duration_hours: float = 1.0) -> str:
         Available time slots
     """
     try:
-        # Parse the date
         target_date = None
         now = datetime.now()
 
@@ -500,9 +608,20 @@ async def check_availability(date: str, duration_hours: float = 1.0) -> str:
             if DATEUTIL_AVAILABLE:
                 target_date = dateutil_parser.parse(date).date()
             else:
-                return "Error: Advanced date parsing not available. Use 'today' or 'tomorrow'."
+                import re
 
-        # Get events for the entire day
+                iso_match = re.match(r"(\d{4})-(\d{1,2})-(\d{1,2})", date)
+                if iso_match:
+                    try:
+                        year = int(iso_match.group(1))
+                        month = int(iso_match.group(2))
+                        day = int(iso_match.group(3))
+                        target_date = datetime(year, month, day).date()
+                    except ValueError:
+                        return f"Error: Invalid date '{date}'. Use format YYYY-MM-DD, 'today', or 'tomorrow'."
+                else:
+                    return f"Error: Cannot parse date '{date}'. Use format YYYY-MM-DD, 'today', or 'tomorrow'."
+
         start_of_day = datetime.combine(target_date, datetime.min.time())
         end_of_day = datetime.combine(target_date, datetime.max.time())
 
@@ -519,7 +638,6 @@ async def check_availability(date: str, duration_hours: float = 1.0) -> str:
         events_data = response.json()
         events = events_data.get("items", [])
 
-        # Build busy periods
         busy_periods = []
         for event in events:
             start = event.get("start", {})
@@ -530,10 +648,8 @@ async def check_availability(date: str, duration_hours: float = 1.0) -> str:
                 end_dt = datetime.fromisoformat(end["dateTime"].replace("Z", "+00:00"))
                 busy_periods.append((start_dt, end_dt))
 
-        # Sort busy periods
         busy_periods.sort()
 
-        # Find free slots (9 AM - 6 PM working hours)
         work_start = datetime.combine(target_date, datetime.min.time().replace(hour=9))
         work_end = datetime.combine(target_date, datetime.min.time().replace(hour=18))
 
@@ -542,12 +658,10 @@ async def check_availability(date: str, duration_hours: float = 1.0) -> str:
         duration_delta = timedelta(hours=duration_hours)
 
         for busy_start, busy_end in busy_periods:
-            # Check if there's a free slot before this busy period
             if current_time + duration_delta <= busy_start:
                 free_slots.append((current_time, busy_start))
             current_time = max(current_time, busy_end)
 
-        # Check for free time after last busy period
         if current_time + duration_delta <= work_end:
             free_slots.append((current_time, work_end))
 
@@ -584,13 +698,11 @@ async def get_calendar_status() -> str:
         if not token:
             return "Not authenticated. Run 'authenticate_google_calendar' first."
 
-        # Test API access by getting calendar info
         response = calendar_request("GET", "/calendars/primary")
         response.raise_for_status()
 
         calendar_info = response.json()
 
-        # Get today's event count
         now = datetime.now()
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
