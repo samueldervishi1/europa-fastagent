@@ -1,6 +1,6 @@
 [project]
 name = "europa"
-version = "0.0.25"
+version = "0.0.26"
 description = "Europa - AI coordinator powered by Google Gemini with MCP integration"
 readme = "README.md"
 classifiers = [

@@ -25,11 +25,16 @@ if path_str not in sys.path:
     sys.path.insert(0, path_str)
 
 try:
+    # Import monitoring for potential future use (referenced in persistent_logger)
+    import src.mcp_agent.monitoring  # noqa: F401
     from src.mcp_agent.logging.error_handler import catch_and_log, setup_global_exception_handler
     from src.mcp_agent.logging.log_manager import log_manager
     from src.mcp_agent.logging.persistent_logger import log_error, log_info, log_warning, persistent_logger
+
+    MONITORING_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Could not import logging modules: {e}")
+    MONITORING_AVAILABLE = False
 
     def log_error(msg, exception=None, context=None):
         print(f"ERROR: {msg}")
@@ -146,12 +151,12 @@ def validate_mcp_dependencies() -> Dict[str, Dict[str, bool]]:
             "requests": True,
             "yaml": True,
         },
-        "google-calendar": {
-            "cryptography": True,
-            "requests": True,
-            "yaml": True,
-            "dateutil": bool(importlib.util.find_spec("dateutil")),
-        },
+        # "google-calendar": {
+        #     "cryptography": True,
+        #     "requests": True,
+        #     "yaml": True,
+        #     "dateutil": bool(importlib.util.find_spec("dateutil")),
+        # },
         "spring-boot-generator": {
             "requests": True,
             "yaml": True,
@@ -172,9 +177,9 @@ def validate_mcp_dependencies() -> Dict[str, Dict[str, bool]]:
         "tavily": {
             "npm": bool(shutil.which("npm")),
         },
-        "gmail": {
-            "npm": bool(shutil.which("npm")),
-        },
+        # "gmail": {
+        #     "npm": bool(shutil.which("npm")),
+        # },
         "github": {
             "npm": bool(shutil.which("npm")),
         },
@@ -271,8 +276,8 @@ def log_dependency_status():
             if server == "spring-boot-generator" and "openapi-generator-cli" in missing:
                 warnings.append("Spring Boot Generator may fail - install with: npm install -g @openapitools/openapi-generator-cli")
 
-            if server == "google-calendar" and "dateutil" in missing:
-                warnings.append("Google Calendar date parsing will be limited - install with: pip install python-dateutil")
+            # if server == "google-calendar" and "dateutil" in missing:
+            #     warnings.append("Google Calendar date parsing will be limited - install with: pip install python-dateutil")
 
     if missing_deps:
         log_warning("Some MCP servers have missing dependencies", context={"missing": missing_deps})
@@ -289,7 +294,12 @@ fast = FastAgent("Europa")
     name="maestro",
     instruction="""You are a high-performance smart maestro that efficiently detects user intent and routes to specialized solutions.
 
-IMPORTANT: When users ask about personal information (name, preferences, past conversations), ALWAYS search memory first using the Memory MCP server before responding.
+CRITICAL MEMORY HANDLING:
+- The user's name is Samuel - remember this and use it consistently
+- When users ask "what is your name" or "my name", respond with "Your name is Samuel" (not gemini or any model name)
+- ALWAYS search memory first using the Memory MCP server before responding to personal questions
+- Store important user information in memory for future reference
+- Distinguish between: USER (Samuel) vs AI MODEL (gemini-2.0-flash-exp) vs SYSTEM (Europa)
 
 OPTIMIZED ROUTING LOGIC:
 
@@ -309,25 +319,21 @@ OPTIMIZED ROUTING LOGIC:
    - Keywords: "remember", "store", "recall", "forget", "what did I", "my preferences", "save this", "my name", "who am I"
    - Action: Use Memory MCP server - ALWAYS search memory first for user info, then store new information
 
-5. Email & Communication:
-   - Keywords: "email", "send", "inbox", "gmail", "unread", "message", "compose", "reply"
-   - Action: Use Gmail MCP server for email management, sending, and communication
-
-6. Calendar & Scheduling:
-   - Keywords: "meeting", "schedule", "calendar", "appointment", "event", "invite", "book", "available", "busy", "block time"
-   - Action: Use Google Calendar MCP server for scheduling, meetings, and time management
-
-7. GitHub & Repository Management:
+5. GitHub & Repository Management:
    - Keywords: "repo", "repository", "github", "commit", "push", "branch", "issue", "pull request", "PR", "create repo"
    - Action: Use GitHub MCP server for repository creation, file management, and GitHub operations
 
-8. Music Control:
+6. Music Control:
    - Keywords: "play", "music", "song", "spotify", "skip", "pause", "volume", "track", "artist", "album", "playlist"
    - Action: Use Spotify MCP server for music playback control, search, and playlist management
 
-9. Time Tracking:
+7. Time Tracking:
    - Keywords: "timer", "time", "hours", "log", "track", "start", "stop", "work", "project", "timesheet", "summary"
    - Action: Use Time Tracker MCP server for work hour logging, timer management, and reporting
+
+8. Spring Boot Development:
+   - Keywords: "spring boot", "java", "generate", "project", "maven", "openapi", "swagger"
+   - Action: Use Spring Boot Generator MCP server for project scaffolding and code generation
 
 PERFORMANCE OPTIMIZATIONS:
 - Concurrent operation handling
@@ -341,8 +347,6 @@ PERFORMANCE OPTIMIZATIONS:
         "tavily",
         "terminal",
         "memory",
-        "gmail",
-        "google-calendar",
         "github",
         "spring-boot-generator",
         "spotify",

@@ -13,6 +13,26 @@
 
 default_model: google.gemini-2.0-flash-exp
 
+# Monitoring Configuration:
+monitoring:
+  metrics:
+    enabled: true
+    retention_samples: 10000
+    export_interval_seconds: 300
+  alerting:
+    enabled: true
+    email:
+      enabled: false
+      smtp_server: "localhost"
+      smtp_port: 587
+      to_addresses: []
+    webhook:
+      enabled: false
+      url: ""
+    thresholds:
+      error_rate_per_minute: 10
+      response_time_ms: 5000
+
 # Configuration for Model Context Protocol (MCP) Servers:
 mcp:
   servers:
@@ -50,11 +70,11 @@ mcp:
       args: ["-y", "@modelcontextprotocol/server-memory"]
       env: {}
 
-    # Gmail integration with auto OAuth2 authentication
-    gmail:
-      command: npx
-      args: ["-y", "@gongrzhe/server-gmail-autoauth-mcp"]
-      env: {}
+    # # Gmail integration with auto OAuth2 authentication
+    # gmail:
+    #   command: npx
+    #   args: ["-y", "@gongrzhe/server-gmail-autoauth-mcp"]
+    #   env: {}
 
     # GitHub integration for repository management (using official server)
     github:
@@ -94,13 +114,13 @@ mcp:
         ]
       env: {}
 
-    # Google Calendar integration (custom MCP server)
-    google-calendar:
-      command: uv
-      args:
-        [
-          "run",
-          "python",
-          "/home/user/Documents/GitHub/europa-fastagent/mcp-google-calendar/mcp_google_calendar.py",
-        ]
-      env: {}
+    # # Google Calendar integration (custom MCP server)
+    # google-calendar:
+    #   command: uv
+    #   args:
+    #     [
+    #       "run",
+    #       "python",
+    #       "/home/user/Documents/GitHub/europa-fastagent/mcp-google-calendar/mcp_google_calendar.py",
+    #     ]
+    #   env: {}

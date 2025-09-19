@@ -9,6 +9,13 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+try:
+    from ..monitoring import error_tracker, metrics_collector
+
+    MONITORING_AVAILABLE = True
+except ImportError:
+    MONITORING_AVAILABLE = False
+
 
 class PersistentLogger:
     """
@@ -136,9 +143,20 @@ class PersistentLogger:
 
             self.error_logger.error(message, exc_info=exception, extra={"error_data": error_data})
             self.app_logger.error(message, exc_info=exception, extra={"error_data": error_data})
+
+            # Track error in monitoring system
+            if MONITORING_AVAILABLE and exception:
+                asyncio.create_task(error_tracker.track_error(exception, context))
+                metrics_collector.increment_counter("errors_total", labels={"type": type(exception).__name__})
         else:
             self.error_logger.error(message, extra={"error_data": error_data})
             self.app_logger.error(message, extra={"error_data": error_data})
+
+            # Track generic error in monitoring system
+            if MONITORING_AVAILABLE:
+                generic_error = Exception(message)
+                asyncio.create_task(error_tracker.track_error(generic_error, context))
+                metrics_collector.increment_counter("errors_total", labels={"type": "generic"})
 
         self._write_json_error(error_data)
 

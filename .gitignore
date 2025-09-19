@@ -214,3 +214,4 @@ logs/errors.jsonl
 time_tracker_data.json
 .google_calendar_tokens.json
 .spotify_key
+time_tracker_data.backup
